@@ -5,7 +5,7 @@
 **Project:** Railway Reservation System  
 **Version:** 1.0  
 **Status:** Implementation Baseline  
-**Primary Design Reference:** Railway Reservation System — Low Level Design (LLD), Version 1.4  
+**Primary Design Reference:** Railway Reservation System — Low Level Design (LLD), Version 1.5  
 **Technology:** C# / .NET / ASP.NET Core / Entity Framework Core / SQL Server  
 **Architecture:** Microservices + Layered Application Architecture  
 **Testing Framework:** NUnit  
@@ -81,7 +81,7 @@ The guide is NOT permission to redesign the system.
 
 ## 2.1 Primary Authority
 
-The finalized Railway Reservation System LLD, Version 1.4, is the primary design authority.
+The finalized Railway Reservation System LLD, Version 1.5, is the primary design authority.
 
 The LLD defines WHAT the system must contain and how it behaves.
 
@@ -211,6 +211,52 @@ Do NOT introduce unless explicitly approved:
 - generic repository frameworks;
 - excessive design patterns;
 - additional microservices.
+
+### 3.3.1 Code Simplicity and Learnability
+
+This project is intended to be educational as well as functional. The most important goal is that a developer who understands basic C# and .NET can read, follow, and understand the complete project.
+
+The AI agent MUST prefer simple, explicit, readable code over clever, highly abstract, or unnecessarily optimized code. The simplest correct implementation should be preferred. Do NOT optimize for code brevity; optimize for readability, maintainability, and understandability.
+
+Prefer:
+
+- straightforward classes and methods;
+- descriptive names;
+- small methods with one clear responsibility;
+- normal `if`/`else` and `switch` statements when they make logic easier to follow;
+- simple loops where they are clearer than complex LINQ;
+- basic LINQ only when it genuinely improves readability;
+- conventional dependency injection;
+- simple repository and application-service classes;
+- explicit DTO mapping;
+- clear EF Core queries;
+- clear validation and exception handling;
+- comments that explain non-obvious business rules or WHY a particular step is required.
+
+Avoid unless the LLD or a concrete requirement clearly requires them:
+
+- complex LINQ chains that are difficult to read;
+- reflection;
+- expression trees;
+- `dynamic` typing;
+- advanced generic abstractions;
+- custom framework or abstraction layers;
+- complicated combinations of design patterns;
+- CQRS/MediatR-style abstractions;
+- event sourcing;
+- specification-pattern frameworks;
+- generic repositories that hide simple data access;
+- unnecessary factory/strategy hierarchies;
+- source generators;
+- large extension-method frameworks;
+- complicated async/concurrency abstractions;
+- clever one-line implementations that make business logic harder to understand.
+
+The following are acceptable and should be used when required by the approved design: `async`/`await`, dependency injection, interfaces defined by the LLD, EF Core, JWT authentication, `HttpClient`, database transactions, SQL isolation/locking required for seat concurrency, basic LINQ, password hashing, logging, and DTOs. These technologies should still be used in their simplest understandable form.
+
+Before introducing an unfamiliar or advanced technique, the agent MUST first consider whether the same requirement can be implemented clearly with basic C#/.NET features. If a simpler approach satisfies the requirement, use the simpler approach.
+
+Do not add abstractions merely to make the code look more architecturally sophisticated. Every abstraction should have a clear reason grounded in the LLD or a concrete implementation requirement.
 
 ## 3.4 Service Ownership
 
@@ -880,6 +926,8 @@ Booking
 - Status : BookingStatus
 - TotalFare : decimal
 - CreatedAt : DateTime
+- UpdatedAt : DateTime
+- CancelledAt : DateTime?
 ```
 
 ## 9.10 BookingPassenger
@@ -930,8 +978,11 @@ Payment
 - Amount : decimal
 - PaymentStatus : PaymentStatus
 - TransactionReference : string
+- IdempotencyKey : string
 - CreatedAt : DateTime
 ```
+
+`IdempotencyKey` is unique in Payment DB and is separate from `TransactionReference`.
 
 Never store raw card number, CVV, or bank credentials.
 
@@ -981,6 +1032,12 @@ PaymentStatus
 - Promoted bookings do not pay again.
 - No promotion occurs after journey start.
 - Registered user email is used for notifications.
+- Ladies quota requires every passenger to be female.
+- General quota has no gender restriction.
+- General and Ladies quota bookings share the same physical seat pool.
+- Cancellation is allowed only until scheduled departure from the booking's FromStation.
+- Waitlist positions are not renumbered; gaps are allowed.
+- Coach/seat identifiers referenced by reservations must not be deleted or reused for different physical master data.
 
 ---
 
@@ -1118,6 +1175,8 @@ Bookings
 - Status
 - TotalFare
 - CreatedAt
+- UpdatedAt
+- CancelledAt
 ```
 
 ### BookingPassengers
@@ -1166,8 +1225,11 @@ Payments
 - Amount
 - PaymentStatus
 - TransactionReference
+- IdempotencyKey UNIQUE
 - CreatedAt
 ```
+
+`IdempotencyKey` is persisted to make payment/refund operations idempotent.
 
 No raw card/CVV/bank credentials.
 
@@ -1383,6 +1445,15 @@ POST /api/payments/process
 POST /api/payments/refund
 ```
 
+Both endpoints require:
+
+```text
+X-Internal-Service-Key
+Idempotency-Key
+```
+
+`X-Internal-Service-Key` authenticates the calling internal service. `Idempotency-Key` prevents duplicate payment/refund effects and is persisted uniquely by Payment Service. Neither value is hardcoded in source code.
+
 ## 11.6 Dummy Razorpay APIs
 
 ```http
@@ -1397,6 +1468,8 @@ Internal:
 ```http
 POST /api/mail/send
 ```
+
+Requires `X-Internal-Service-Key` and is not routed through the API Gateway.
 
 Templates:
 
@@ -1437,6 +1510,36 @@ Use appropriately:
 Controllers remain thin.
 
 ---
+
+## 11.10 Representative DTOs
+
+The implementation should use simple request/response DTOs at API boundaries. Representative shapes from the LLD are:
+
+```csharp
+public record LoginRequest(string Email, string Password);
+public record LoginResponse(string Token, int UserId, string Role, int ExpiresIn);
+public record BookingPassengerRequest(string Name, int Age, Gender Gender, string Address);
+public record BookingRequest(
+    int TrainId,
+    int FromStationId,
+    int ToStationId,
+    DateTime JourneyDate,
+    CoachType CoachType,
+    QuotaType Quota,
+    List<BookingPassengerRequest> Passengers);
+public record BookingResponse(
+    string Pnr,
+    BookingStatus Status,
+    decimal TotalFare,
+    List<BookingPassengerResponse> Passengers);
+public record BookingPassengerResponse(
+    int BookingPassengerId,
+    string Name,
+    string? CoachNumber,
+    string? SeatNumber);
+```
+
+These are representative examples, not permission to redesign the API contract.
 
 # 12. Authentication and Authorization Contract
 
@@ -1693,7 +1796,99 @@ Reservation retrieves the registered email from User Service.
 
 Booking and BookingPassenger do not store email.
 
-Email failure does NOT roll back a successful booking.
+Email failure does NOT roll back a successful booking. Failed notifications are logged with the booking PNR for manual retry; automated retry queues/DLQs are out of scope.
+
+## 13.13 Additional LLD Version 1.5 Clarifications
+
+The following rules are explicitly frozen from the finalized LLD Version 1.5 and MUST be followed during implementation.
+
+### Payment and Reservation Transaction Boundary
+
+The booking workflow is:
+
+```text
+Generate booking identifier
+        ↓
+Process payment
+        ↓
+Reservation DB transaction
+        ↓
+Persist booking / passengers / allocations or waitlist
+```
+
+Payment and refund calls are external operations and are NOT part of the Reservation DB transaction.
+
+If payment succeeds but the Reservation DB transaction/persistence fails, Reservation Service MUST request a compensating refund through Payment Service. No completed reservation is returned.
+
+The Reservation DB transaction covers the reservation-side atomic work required for availability validation, seat allocation, booking persistence, passenger persistence, and waitlist persistence/promotion.
+
+### Segment Overlap and StopOrder
+
+`FromStationId` and `ToStationId` identify stations on the train route. Their corresponding `RouteStops.StopOrder` values are used for segment comparison.
+
+Two seat allocations overlap when:
+
+```text
+existingFromOrder < requestedToOrder
+AND
+requestedFromOrder < existingToOrder
+```
+
+A physical seat may therefore be reused on non-overlapping journey segments.
+
+### Concurrency
+
+Availability validation and seat allocation MUST occur inside the same Reservation DB transaction. SQL Server `SERIALIZABLE` isolation or an equivalent explicit locking approach MUST prevent concurrent requests from allocating the same physical seat for overlapping segments.
+
+Do NOT use Redis or distributed locks.
+
+### Coach and Seat Identity
+
+Once a coach or seat has been referenced by a reservation/seat allocation, its identifier MUST NOT be deleted or reused for a different physical coach/seat.
+
+### Internal Service Security
+
+Payment Service and Mail Service internal HTTP endpoints MUST require the configured `X-Internal-Service-Key`.
+
+The key MUST come from configuration/environment and MUST NOT be hardcoded. These internal endpoints are not routed through the API Gateway.
+
+### Payment and Refund Idempotency
+
+Payment and refund requests MUST include an `Idempotency-Key`. The key MUST be persisted uniquely in Payment DB.
+
+`Idempotency-Key` is separate from the provider `TransactionReference`. Repeated requests with the same idempotency key must not create duplicate payment/refund effects.
+
+### Cancellation Cutoff
+
+Cancellation is permitted until the scheduled departure time of the train from the booking's `FromStation`. After that scheduled departure time, cancellation is rejected.
+
+### Quota Rules
+
+- Ladies quota requires ALL passengers in the booking to be female.
+- General quota has no gender restriction.
+- General and Ladies quota bookings share the same physical seat pool.
+- Quota is a booking-level attribute; separate quota-specific seat inventory is out of scope for the MVP.
+
+### Waitlist Position Rules
+
+Waitlist position is assigned when the booking enters the waitlist. Positions are NOT renumbered after promotion or cancellation. Gaps are allowed. FIFO evaluation uses ascending original position.
+
+There is no explicit maximum waitlist length in the current MVP. Operational capacity limits are out of scope.
+
+A waiting booking is eligible for promotion only until journey start. No automatic expiry/cancellation mechanism for old waiting bookings is required in the MVP.
+
+### Notification Failure
+
+Notification failure MUST NOT roll back a successful booking, cancellation, or waitlist promotion. Failed notifications MUST be logged with the booking PNR so that they can be manually retried. Automated retry queues and dead-letter queues are out of scope for the MVP.
+
+### Audit Fields
+
+`Booking.UpdatedAt` and `Booking.CancelledAt` are required audit fields. They do not require dedicated indexes for the current MVP unless a concrete implementation need is identified.
+
+### Performance Scope
+
+Load testing, performance benchmarking, and production throughput/capacity targets are outside the current MVP/LLD scope. Do not introduce performance infrastructure merely to satisfy these non-requirements.
+
 
 ---
 
@@ -1807,6 +2002,8 @@ Implement incrementally:
 8. concurrency;
 9. comprehensive tests.
 
+The booking/cancellation/promotion workflows must use the Reservation DB transaction boundaries and SQL Server concurrency protection defined in Section 13.13.
+
 Reservation remains one deployable service.
 
 ## 14.8 API Gateway
@@ -1834,7 +2031,8 @@ Create:
 - base configuration;
 - README;
 - .gitignore;
-- .editorconfig.
+- .editorconfig;
+- shared/global exception middleware structure where required by each HTTP service.
 
 Verify:
 
@@ -1974,13 +2172,15 @@ Implement:
 - registered email lookup;
 - notification.
 
+Booking workflow MUST follow: generate booking identifier → process payment → Reservation DB transaction → persist final confirmed/waitlisted state. If persistence fails after successful payment, request compensating refund.
+
 ### 6E — Cancellation
 
 Implement:
 
 - ownership;
 - status;
-- journey-start validation;
+- journey-start validation using the scheduled departure time from the booking's FromStation;
 - refund;
 - release;
 - notification.
@@ -2343,7 +2543,7 @@ After migrations:
 
 ## 19.1 Global Error Handling
 
-Use global exception middleware.
+Use global exception middleware. Register it early in the HTTP middleware pipeline so that it wraps downstream middleware, including authentication/authorization and endpoint execution. This ensures exceptions are consistently mapped and logged.
 
 Conceptual:
 
@@ -2390,7 +2590,7 @@ Unexpected      → 500
 
 ## 19.5 External HTTP Failures
 
-Inter-service failures MUST be explicit.
+Inter-service failures MUST be explicit. Internal Payment and Mail endpoints MUST also validate `X-Internal-Service-Key`. Payment/refund calls must carry an `Idempotency-Key`.
 
 Do not fabricate successful responses when a dependency is unavailable.
 
@@ -2595,15 +2795,27 @@ Verify:
 Test:
 
 - payment failure;
+- payment timeout;
+- repeated idempotent payment request;
+- repeated idempotent refund request;
 - reservation persistence failure;
-- compensating refund;
-- email failure;
+- compensating refund after payment success;
+- duplicate PNR handling where applicable;
+- email/SMTP server unavailable;
+- notification failure without booking rollback;
 - missing JWT;
 - invalid JWT;
+- expired JWT;
 - wrong role;
+- unauthorized cancellation by another user;
 - wrong owner;
 - invalid route;
 - more than 6 passengers;
+- invalid Ladies quota passenger composition;
+- concurrent booking of the final available seat;
+- insufficient seats for full waitlist promotion;
+- attempted promotion after journey start;
+- cancellation after the FromStation departure cutoff;
 - duplicate registration.
 
 ## 20.9 API Verification
@@ -2930,7 +3142,7 @@ The following prompt may be provided to an AI coding agent together with this gu
 ```text
 You are the implementation engineer for the Railway Reservation System.
 
-Treat the finalized Railway Reservation System LLD, Version 1.4, as the
+Treat the finalized Railway Reservation System LLD, Version 1.5, as the
 primary design authority and AI_IMPLEMENTATION_GUIDE.md as the execution
 contract.
 
@@ -2984,6 +3196,15 @@ HTTP/REST, SMTP, and NUnit.
 Keep controllers thin, use application services for workflows,
 repositories for data access, and client abstractions for inter-service
 HTTP communication.
+
+Code must be easy to understand for a developer familiar with basic
+C#/.NET. Prefer explicit, straightforward implementations over clever
+or highly abstract code. Use simple control flow, descriptive names,
+small methods, explicit DTO mapping, clear EF Core queries, and basic
+LINQ where appropriate. Avoid advanced techniques and unnecessary
+abstractions when a simpler implementation satisfies the requirement.
+Do not optimize for brevity; optimize for readability and
+understandability.
 
 Never store raw card numbers, CVV, bank credentials, or password
 plaintext.
@@ -3127,6 +3348,12 @@ Do not declare the project complete until implementation and verification suppor
 
 ## 23.9 Reservation Service
 
+- [ ] Booking has `UpdatedAt` and `CancelledAt`.
+- [ ] Ladies quota requires all passengers to be female.
+- [ ] General/Ladies bookings share the same physical seat pool.
+- [ ] Seat availability uses RouteStop `StopOrder` segment overlap.
+- [ ] Availability validation and allocation are protected by the required Reservation DB transaction/concurrency approach.
+
 - [ ] Booking implemented.
 - [ ] BookingPassenger implemented.
 - [ ] SeatAllocation implemented.
@@ -3149,6 +3376,9 @@ Do not declare the project complete until implementation and verification suppor
 
 ## 23.10 Cancellation
 
+- [ ] Cancellation cutoff uses scheduled departure from the booking's FromStation.
+- [ ] Cancellation is rejected after that cutoff.
+
 - [ ] User can cancel only own booking.
 - [ ] Already cancelled booking cannot be cancelled again.
 - [ ] Cancellation before journey start enforced.
@@ -3159,6 +3389,11 @@ Do not declare the project complete until implementation and verification suppor
 - [ ] Waitlist evaluation follows cancellation.
 
 ## 23.11 Waitlist
+
+- [ ] Waitlist positions are not renumbered; gaps are allowed.
+- [ ] FIFO uses original ascending position.
+- [ ] No explicit maximum waitlist length is imposed in the MVP.
+- [ ] No promotion occurs after journey start.
 
 - [ ] FIFO ordering implemented.
 - [ ] No skipping.
@@ -3198,7 +3433,7 @@ Do not declare the project complete until implementation and verification suppor
 
 ## 23.14 Errors and Logging
 
-- [ ] Global exception middleware exists.
+- [ ] Global exception middleware exists and is registered early enough to wrap downstream middleware, including authentication/authorization and endpoints.
 - [ ] ErrorResponse is consistent.
 - [ ] Correct HTTP status mappings are used.
 - [ ] External service failures are explicit.
@@ -3208,6 +3443,12 @@ Do not declare the project complete until implementation and verification suppor
 - [ ] Trace IDs are available.
 
 ## 23.15 Testing
+
+- [ ] Negative/failure scenarios from Section 20.8 are covered.
+- [ ] Final-seat concurrency is tested.
+- [ ] Payment/refund idempotency is tested.
+- [ ] Persistence-failure compensating refund is tested.
+- [ ] SMTP failure is tested without booking rollback.
 
 - [ ] Unit tests pass.
 - [ ] Integration tests pass.
@@ -3259,6 +3500,10 @@ Promotion if eligible
 
 ## 23.17 Configuration and Security
 
+- [ ] `X-Internal-Service-Key` is configured externally and required for internal Payment/Mail endpoints.
+- [ ] Payment and refund use persisted unique `Idempotency-Key` values.
+- [ ] No secrets are hardcoded.
+
 - [ ] No secrets are committed.
 - [ ] DB connections are configuration-driven.
 - [ ] JWT configuration is externalized.
@@ -3292,6 +3537,9 @@ dotnet test
 Both must succeed before final completion.
 
 ## 23.20 Final Architecture Compliance Gate
+
+The implementation MUST also be checked against every frozen LLD Version 1.5 clarification in Section 13.13, including transaction boundaries, concurrency, internal API security, idempotency, cancellation cutoff, quota rules, waitlist positions, notification behavior, audit fields, and MVP performance scope.
+
 
 Before declaring completion, verify that the implementation did NOT introduce:
 
