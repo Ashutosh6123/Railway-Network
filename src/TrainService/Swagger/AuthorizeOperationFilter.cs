@@ -26,7 +26,7 @@ public sealed class AuthorizeOperationFilter : IOperationFilter
         operation.Security ??= new List<OpenApiSecurityRequirement>();
         operation.Security.Add(new OpenApiSecurityRequirement
         {
-            [new OpenApiSecuritySchemeReference("Bearer", null, null)] = new List<string>()
+            [new OpenApiSecuritySchemeReference("Bearer", context.Document)] = new List<string>()
         });
     }
 }
