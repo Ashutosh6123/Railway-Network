@@ -19,6 +19,18 @@ public sealed class GlobalExceptionMiddleware
         {
             await _next(context);
         }
+        catch (ArgumentException exception)
+        {
+            await WriteErrorAsync(context, StatusCodes.Status400BadRequest, "ValidationError", exception.Message);
+        }
+        catch (InvalidOperationException exception)
+        {
+            await WriteErrorAsync(context, StatusCodes.Status409Conflict, "Conflict", exception.Message);
+        }
+        catch (UnauthorizedAccessException exception)
+        {
+            await WriteErrorAsync(context, StatusCodes.Status401Unauthorized, "Unauthorized", exception.Message);
+        }
         catch (Exception exception)
         {
             _logger.LogError(exception, "An unhandled exception occurred. TraceId: {TraceId}", context.TraceIdentifier);
@@ -35,5 +47,11 @@ public sealed class GlobalExceptionMiddleware
                 "An unexpected error occurred.",
                 context.TraceIdentifier));
         }
+    }
+
+    private static Task WriteErrorAsync(HttpContext context, int statusCode, string error, string message)
+    {
+        context.Response.StatusCode = statusCode;
+        return context.Response.WriteAsJsonAsync(new ErrorResponse(statusCode, error, message, context.TraceIdentifier));
     }
 }

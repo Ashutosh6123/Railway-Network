@@ -1,5 +1,8 @@
 {
   "ConnectionStrings": {
     "TrainDb": "Server=YOUR_SERVER;Database=RailwayTrainDb;User Id=YOUR_USERNAME;Password=YOUR_PASSWORD;TrustServerCertificate=True"
+  },
+  "Jwt": {
+    "Key": "YOUR_DEVELOPMENT_JWT_SIGNING_KEY"
   }
 }
