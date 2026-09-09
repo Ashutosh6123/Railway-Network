@@ -1,0 +1,13 @@
+{
+  "ConnectionStrings": {
+    "PaymentDb": "Server=YOUR_SERVER;Database=RailwayPaymentDb;User Id=YOUR_USERNAME;Password=YOUR_PASSWORD;TrustServerCertificate=True"
+  },
+  "DummyRazorpay": {
+    "BaseUrl": "http://localhost:5006",
+    "SimulateSuccess": true,
+    "TimeoutSeconds": 30
+  },
+  "InternalService": {
+    "ApiKey": "YOUR_DEVELOPMENT_INTERNAL_SERVICE_API_KEY"
+  }
+}
