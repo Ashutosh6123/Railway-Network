@@ -1,0 +1,5 @@
+{
+  "ConnectionStrings": {
+    "UserDb": "Server=YOUR_SERVER;Database=RailwayUserDb;User Id=YOUR_USERNAME;Password=YOUR_PASSWORD;TrustServerCertificate=True"
+  }
+}

@@ -1,0 +1,6 @@
+using Microsoft.EntityFrameworkCore; using UserService.Data; using UserService.Entities;
+namespace UserService.Repositories;
+public interface IUserRepository { Task<User?> GetByIdAsync(int id); Task<User?> GetByEmailAsync(string email); Task<User?> GetByPhoneNumberAsync(string phoneNumber); Task AddAsync(User user); Task UpdateAsync(User user); }
+public interface IRoleRepository { Task<Role?> GetByIdAsync(int id); Task<Role?> GetByNameAsync(string name); }
+public class UserRepository(UserDbContext db):IUserRepository { public Task<User?> GetByIdAsync(int id)=>db.Users.Include(x=>x.Role).FirstOrDefaultAsync(x=>x.Id==id); public Task<User?> GetByEmailAsync(string email)=>db.Users.Include(x=>x.Role).FirstOrDefaultAsync(x=>x.Email==email); public Task<User?> GetByPhoneNumberAsync(string phoneNumber)=>db.Users.FirstOrDefaultAsync(x=>x.PhoneNumber==phoneNumber); public async Task AddAsync(User u){db.Users.Add(u);await db.SaveChangesAsync();} public async Task UpdateAsync(User u){db.Users.Update(u);await db.SaveChangesAsync();} }
+public class RoleRepository(UserDbContext db):IRoleRepository { public Task<Role?> GetByIdAsync(int id)=>db.Roles.FindAsync(id).AsTask(); public Task<Role?> GetByNameAsync(string n)=>db.Roles.FirstOrDefaultAsync(x=>x.Name==n); }
