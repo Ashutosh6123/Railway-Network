@@ -22,6 +22,7 @@ builder.Services.AddScoped<TrainService.Repositories.ICoachRepository, TrainServ
 builder.Services.AddScoped<TrainService.Repositories.ISeatRepository, TrainService.Repositories.SeatRepository>();
 builder.Services.AddScoped<TrainService.Repositories.IFareRepository, TrainService.Repositories.FareRepository>();
 builder.Services.AddScoped<TrainService.Services.ITrainService, TrainService.Services.TrainService>();
+builder.Services.AddScoped<TrainService.Services.ITrainAdminService, TrainService.Services.TrainAdminService>();
 
 var app = builder.Build();
 
