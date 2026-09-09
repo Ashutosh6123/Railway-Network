@@ -35,6 +35,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{C4AD
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProvisionAdministrator", "scripts\ProvisionAdministrator\ProvisionAdministrator.csproj", "{4614C8A1-A01C-4641-A3CE-615651A75F7D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DummyRazorpayGateway.Tests", "tests\DummyRazorpayGateway.Tests\DummyRazorpayGateway.Tests.csproj", "{805103B9-E445-4C63-82DA-85E8A7D76E9E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -201,6 +203,18 @@ Global
 		{4614C8A1-A01C-4641-A3CE-615651A75F7D}.Release|x64.Build.0 = Release|Any CPU
 		{4614C8A1-A01C-4641-A3CE-615651A75F7D}.Release|x86.ActiveCfg = Release|Any CPU
 		{4614C8A1-A01C-4641-A3CE-615651A75F7D}.Release|x86.Build.0 = Release|Any CPU
+		{805103B9-E445-4C63-82DA-85E8A7D76E9E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{805103B9-E445-4C63-82DA-85E8A7D76E9E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{805103B9-E445-4C63-82DA-85E8A7D76E9E}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{805103B9-E445-4C63-82DA-85E8A7D76E9E}.Debug|x64.Build.0 = Debug|Any CPU
+		{805103B9-E445-4C63-82DA-85E8A7D76E9E}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{805103B9-E445-4C63-82DA-85E8A7D76E9E}.Debug|x86.Build.0 = Debug|Any CPU
+		{805103B9-E445-4C63-82DA-85E8A7D76E9E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{805103B9-E445-4C63-82DA-85E8A7D76E9E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{805103B9-E445-4C63-82DA-85E8A7D76E9E}.Release|x64.ActiveCfg = Release|Any CPU
+		{805103B9-E445-4C63-82DA-85E8A7D76E9E}.Release|x64.Build.0 = Release|Any CPU
+		{805103B9-E445-4C63-82DA-85E8A7D76E9E}.Release|x86.ActiveCfg = Release|Any CPU
+		{805103B9-E445-4C63-82DA-85E8A7D76E9E}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -219,5 +233,6 @@ Global
 		{F0F7CB8C-E26F-4777-865F-26DF898554EE} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{7D2DBF76-DFD6-47E7-905B-A373CA09F212} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{4614C8A1-A01C-4641-A3CE-615651A75F7D} = {C4AD9936-F0DF-1090-6077-3D4A6324E662}
+		{805103B9-E445-4C63-82DA-85E8A7D76E9E} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 EndGlobal
