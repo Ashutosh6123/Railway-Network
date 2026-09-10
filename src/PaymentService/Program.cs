@@ -6,6 +6,7 @@ builder.Configuration.AddJsonFile(
     "appsettings.Development.local.json",
     optional: true,
     reloadOnChange: true);
+builder.Configuration.AddEnvironmentVariables();
 
 var paymentDbConnectionString = builder.Configuration.GetConnectionString("PaymentDb");
 var dummyRazorpayBaseUrl = builder.Configuration["DummyRazorpay:BaseUrl"];

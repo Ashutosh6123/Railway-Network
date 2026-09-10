@@ -29,12 +29,21 @@ public class BookingService(
         var user = await userClient.GetUserAsync(userId)
             ?? throw new InvalidOperationException("User was not found.");
 
-        await trainClient.GetTrainAsync(request.TrainId);
+        var train = await trainClient.GetTrainAsync(request.TrainId);
+        var routeStops = await trainClient.GetRouteAsync(request.TrainId);
+
+        var fromStop = routeStops.FirstOrDefault(stop => stop.StationId == request.FromStationId)
+            ?? throw new InvalidOperationException("Booking origin station was not found on the train route.");
+        
+        var toStop = routeStops.FirstOrDefault(stop => stop.StationId == request.ToStationId)
+            ?? throw new InvalidOperationException("Booking destination station was not found on the train route.");
+        
         var fare = await trainClient.GetFareAsync(
             request.TrainId,
             request.FromStationId,
             request.ToStationId,
             request.CoachType);
+        
         var totalFare = fare.Amount * request.Passengers.Count;
         var pnr = await GenerateUniquePnrAsync();
         var initialAvailability = await availabilityService.GetAvailabilityAsync(
@@ -55,7 +64,14 @@ public class BookingService(
         try
         {
             var response = await PersistBookingAsync(userId, request, pnr, totalFare, initiallyConfirmed);
-            await SendNotificationAsync(user.Email, response, request);
+            await SendNotificationAsync(
+                user.Email, 
+                response, 
+                request, 
+                train.TrainNumber, 
+                fromStop.StationName,
+                toStop.StationName
+            );
             return response;
         }
         catch (Exception exception)
@@ -363,18 +379,23 @@ public class BookingService(
         return new BookingResponse(booking.Pnr, booking.Status, booking.TotalFare, responsePassengers);
     }
 
+
     private async Task SendNotificationAsync(
         string email,
         BookingResponse response,
-        BookingRequest request)
+        BookingRequest request,
+        string trainNumber,
+        string fromStationName,
+        string toStationName
+    )
     {
         var data = new Dictionary<string, string>
         {
             ["pnr"] = response.Pnr,
-            ["trainNumber"] = request.TrainId.ToString(),
+            ["trainNumber"] = trainNumber,
             ["journeyDate"] = request.JourneyDate.Date.ToString("yyyy-MM-dd"),
-            ["from"] = request.FromStationId.ToString(),
-            ["to"] = request.ToStationId.ToString()
+            ["from"] = fromStationName,
+            ["to"] = toStationName
         };
 
         if (response.Status == BookingStatus.Confirmed && response.Passengers.Count > 0)
@@ -431,13 +452,51 @@ public class BookingService(
         {
             var user = await userClient.GetUserAsync(booking.UserId)
                 ?? throw new InvalidOperationException("User was not found.");
-            await mailClient.SendAsync(user.Email, "Cancellation", CreateNotificationData(booking));
+
+            var train = await trainClient.GetTrainAsync(booking.TrainId);
+            var routeStops = await trainClient.GetRouteAsync(booking.TrainId);
+
+            var fromStop = routeStops.FirstOrDefault(stop => stop.StationId == booking.FromStationId) ?? throw new InvalidOperationException("Booking origin station was not found on the train route");
+
+            var toStop = routeStops.LastOrDefault(stop => stop.StationId == booking.ToStationId) ?? throw new InvalidOperationException("Booking destination station was not found on the train route");
+
+            await mailClient.SendAsync(
+                user.Email,
+                "Cancellation",
+                CreateNotificationData(
+                    booking,
+                    train.TrainNumber,
+                    fromStop.StationName,
+                    toStop.StationName
+                )
+            );
+
         }
         catch (Exception exception)
         {
             logger.LogError(exception, "Cancellation notification failed for PNR {Pnr}. The cancellation remains successful.", response.Pnr);
         }
     }
+
+    // private async Task SendPromotionNotificationAsync(
+    //     Booking booking,
+    //     List<BookingPassenger> passengers,
+    //     List<AvailableSeat> availableSeats)
+    // {
+    //     try
+    //     {
+    //         var user = await userClient.GetUserAsync(booking.UserId)
+    //             ?? throw new InvalidOperationException("User was not found.");
+    //         var data = CreateNotificationData(booking);
+    //         data["coach"] = availableSeats[0].CoachNumber;
+    //         data["seat"] = availableSeats[0].SeatNumber;
+    //         await mailClient.SendAsync(user.Email, "WaitlistPromotion", data);
+    //     }
+    //     catch (Exception exception)
+    //     {
+    //         logger.LogError(exception, "Waitlist promotion notification failed for PNR {Pnr}. The promotion remains successful.", booking.Pnr);
+    //     }
+    // }
 
     private async Task SendPromotionNotificationAsync(
         Booking booking,
@@ -448,9 +507,25 @@ public class BookingService(
         {
             var user = await userClient.GetUserAsync(booking.UserId)
                 ?? throw new InvalidOperationException("User was not found.");
-            var data = CreateNotificationData(booking);
+
+            var train = await trainClient.GetTrainAsync(booking.TrainId);
+            var routeStops = await trainClient.GetRouteAsync(booking.TrainId);
+
+            var fromStop = routeStops.FirstOrDefault(stop => stop.StationId == booking.FromStationId)
+                ?? throw new InvalidOperationException("Booking origin station was not found on the train route.");
+
+            var toStop = routeStops.FirstOrDefault(stop => stop.StationId == booking.ToStationId)
+                ?? throw new InvalidOperationException("Booking destination station was not found on the train route.");
+
+            var data = CreateNotificationData(
+                booking,
+                train.TrainNumber,
+                fromStop.StationName,
+                toStop.StationName);
+
             data["coach"] = availableSeats[0].CoachNumber;
             data["seat"] = availableSeats[0].SeatNumber;
+
             await mailClient.SendAsync(user.Email, "WaitlistPromotion", data);
         }
         catch (Exception exception)
@@ -459,15 +534,19 @@ public class BookingService(
         }
     }
 
-    private static Dictionary<string, string> CreateNotificationData(Booking booking)
+    private static Dictionary<string, string> CreateNotificationData(
+        Booking booking,
+        string trainNumber,
+        string fromStationName,
+        string toStationName)
     {
         return new Dictionary<string, string>
         {
             ["pnr"] = booking.Pnr,
-            ["trainNumber"] = booking.TrainId.ToString(),
+            ["trainNumber"] = trainNumber,
             ["journeyDate"] = booking.JourneyDate.Date.ToString("yyyy-MM-dd"),
-            ["from"] = booking.FromStationId.ToString(),
-            ["to"] = booking.ToStationId.ToString()
+            ["from"] = fromStationName,
+            ["to"] = toStationName
         };
     }
 

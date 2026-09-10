@@ -10,6 +10,7 @@ builder.Configuration.AddJsonFile(
     "appsettings.Development.local.json",
     optional: true,
     reloadOnChange: true);
+builder.Configuration.AddEnvironmentVariables();
 
 var trainDbConnectionString = builder.Configuration.GetConnectionString("TrainDb");
 var jwtKey = builder.Configuration["Jwt:Key"];

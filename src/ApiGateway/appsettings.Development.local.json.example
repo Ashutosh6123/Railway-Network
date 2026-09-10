@@ -1,0 +1,10 @@
+{
+  "ServiceUrls": {
+    "UserService": "http://localhost:5001",
+    "TrainService": "http://localhost:5002",
+    "ReservationService": "http://localhost:5003"
+  },
+  "Jwt": {
+    "Key": "YOUR_DEVELOPMENT_JWT_SIGNING_KEY"
+  }
+}

@@ -10,6 +10,7 @@ builder.Configuration.AddJsonFile(
     "appsettings.Development.local.json",
     optional: true,
     reloadOnChange: true);
+builder.Configuration.AddEnvironmentVariables();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
