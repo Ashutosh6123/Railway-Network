@@ -25,7 +25,7 @@ public class PaymentService(
 
         var payment = new Payment
         {
-            BookingId = request.BookingId,
+            BookingPnr = request.BookingPnr,
             Amount = request.Amount,
             PaymentStatus = PaymentStatus.Pending,
             IdempotencyKey = request.IdempotencyKey,
@@ -53,7 +53,7 @@ public class PaymentService(
 
         var simulateSuccess = configuration.GetValue("DummyRazorpay:SimulateSuccess", true);
         var gatewayResult = await paymentGateway.ProcessPaymentAsync(
-            $"booking-{request.BookingId}",
+            request.BookingPnr,
             request.Amount,
             simulateSuccess);
 
@@ -149,9 +149,9 @@ public class PaymentService(
 
     private static void ValidatePaymentRequest(ProcessPaymentRequest request)
     {
-        if (request.BookingId <= 0)
+        if (string.IsNullOrWhiteSpace(request.BookingPnr))
         {
-            throw new ArgumentException("Booking ID must be greater than zero.");
+            throw new ArgumentException("Booking PNR is required.");
         }
 
         if (request.Amount <= 0)
@@ -186,7 +186,7 @@ public class PaymentService(
     private static PaymentResultDto ToResultDto(Payment payment)
     {
         return new PaymentResultDto(
-            payment.BookingId,
+            payment.BookingPnr,
             payment.Amount,
             payment.PaymentStatus,
             string.IsNullOrEmpty(payment.TransactionReference) ? null : payment.TransactionReference,

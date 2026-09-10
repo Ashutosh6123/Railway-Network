@@ -27,7 +27,7 @@ public class PaymentController(
         }
 
         var result = await paymentService.ProcessPaymentAsync(new ProcessPaymentRequest(
-            request.BookingId,
+            request.BookingPnr,
             request.Amount,
             idempotencyKey));
 

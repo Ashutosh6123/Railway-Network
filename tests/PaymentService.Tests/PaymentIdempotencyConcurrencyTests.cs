@@ -18,7 +18,7 @@ public class PaymentIdempotencyConcurrencyTests
         var repository = new InMemoryPaymentRepository();
         var gateway = new CountingPaymentGateway();
         var service = CreateService(repository, gateway);
-        var request = new ProcessPaymentRequest(1, 1000m, "payment-key-1");
+        var request = new ProcessPaymentRequest("PNR1", 1000m, "payment-key-1");
 
         await service.ProcessPaymentAsync(request);
         await service.ProcessPaymentAsync(request);
@@ -53,7 +53,7 @@ public class PaymentIdempotencyConcurrencyTests
         var gateway = new CountingPaymentGateway();
         var service = CreateService(repository, gateway);
 
-        await service.ProcessPaymentAsync(new ProcessPaymentRequest(1, 1000m, "payment-key-1"));
+        await service.ProcessPaymentAsync(new ProcessPaymentRequest("PNR1", 1000m, "payment-key-1"));
         var payment = repository.GetStoredPayment("payment-key-1")!;
 
         await service.RefundAsync(new RefundPaymentRequest(
@@ -73,7 +73,7 @@ public class PaymentIdempotencyConcurrencyTests
         var repository = new InMemoryPaymentRepository(waitForPaymentKeyLookups: true);
         var gateway = new CountingPaymentGateway();
         var service = CreateService(repository, gateway);
-        var request = new ProcessPaymentRequest(1, 1000m, "payment-key-1");
+        var request = new ProcessPaymentRequest("PNR1", 1000m, "payment-key-1");
 
         await Task.WhenAll(
             service.ProcessPaymentAsync(request),
@@ -121,7 +121,7 @@ public class PaymentIdempotencyConcurrencyTests
         return new Payment
         {
             Id = 1,
-            BookingId = 1,
+            BookingPnr = "PNR1",
             Amount = 1000m,
             PaymentStatus = PaymentStatus.Successful,
             IdempotencyKey = "payment-key-1",
@@ -266,7 +266,7 @@ public class PaymentIdempotencyConcurrencyTests
             return new Payment
             {
                 Id = payment.Id,
-                BookingId = payment.BookingId,
+                BookingPnr = payment.BookingPnr,
                 Amount = payment.Amount,
                 PaymentStatus = payment.PaymentStatus,
                 TransactionReference = payment.TransactionReference,

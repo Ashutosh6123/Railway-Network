@@ -11,12 +11,12 @@ namespace PaymentService.Tests;
 public class PaymentServiceTests
 {
     [Test]
-    public void ProcessPaymentAsync_RejectsInvalidBookingId()
+    public void ProcessPaymentAsync_RejectsEmptyBookingPnr()
     {
         var service = CreateService();
 
         Assert.ThrowsAsync<ArgumentException>(() =>
-            service.ProcessPaymentAsync(new ProcessPaymentRequest(0, 100m, "payment-key")));
+            service.ProcessPaymentAsync(new ProcessPaymentRequest(" ", 100m, "payment-key")));
     }
 
     [Test]
@@ -25,7 +25,7 @@ public class PaymentServiceTests
         var service = CreateService();
 
         Assert.ThrowsAsync<ArgumentException>(() =>
-            service.ProcessPaymentAsync(new ProcessPaymentRequest(1, 0m, "payment-key")));
+            service.ProcessPaymentAsync(new ProcessPaymentRequest("PNR10", 0m, "payment-key")));
     }
 
     [Test]
@@ -34,7 +34,7 @@ public class PaymentServiceTests
         var service = CreateService();
 
         Assert.ThrowsAsync<ArgumentException>(() =>
-            service.ProcessPaymentAsync(new ProcessPaymentRequest(1, 100m, " ")));
+            service.ProcessPaymentAsync(new ProcessPaymentRequest("PNR10", 100m, " ")));
     }
 
     [Test]
@@ -47,14 +47,14 @@ public class PaymentServiceTests
         };
         var service = CreateService(repository, gateway);
 
-        var result = await service.ProcessPaymentAsync(new ProcessPaymentRequest(10, 250m, "payment-key"));
+        var result = await service.ProcessPaymentAsync(new ProcessPaymentRequest("PNR10", 250m, "payment-key"));
 
         Assert.That(result.PaymentStatus, Is.EqualTo(PaymentStatus.Successful));
         Assert.That(result.TransactionReference, Is.EqualTo("dummy_payment_1"));
         Assert.That(repository.AddedPayments, Has.Count.EqualTo(1));
         Assert.That(repository.AddedPayments[0].TransactionReference, Is.EqualTo("dummy_payment_1"));
         Assert.That(repository.AddedPayments[0].CreatedAt, Is.Not.EqualTo(default(DateTime)));
-        Assert.That(gateway.LastPaymentReference, Is.EqualTo("booking-10"));
+        Assert.That(gateway.LastPaymentReference, Is.EqualTo("PNR10"));
         Assert.That(gateway.LastSimulateSuccess, Is.True);
     }
 
@@ -68,7 +68,7 @@ public class PaymentServiceTests
         };
         var service = CreateService(repository, gateway);
 
-        var result = await service.ProcessPaymentAsync(new ProcessPaymentRequest(10, 250m, "payment-key"));
+        var result = await service.ProcessPaymentAsync(new ProcessPaymentRequest("PNR10", 250m, "payment-key"));
 
         Assert.That(result.PaymentStatus, Is.EqualTo(PaymentStatus.Failed));
         Assert.That(result.TransactionReference, Is.Null);
@@ -84,7 +84,7 @@ public class PaymentServiceTests
         var gateway = new FakePaymentGateway();
         var service = CreateService(repository, gateway);
 
-        var result = await service.ProcessPaymentAsync(new ProcessPaymentRequest(10, 250m, "payment-key"));
+        var result = await service.ProcessPaymentAsync(new ProcessPaymentRequest("PNR10", 250m, "payment-key"));
 
         Assert.That(result.PaymentStatus, Is.EqualTo(status));
         Assert.That(gateway.ProcessCallCount, Is.Zero);
@@ -98,7 +98,7 @@ public class PaymentServiceTests
         var service = CreateService(gateway: gateway);
 
         Assert.ThrowsAsync<HttpRequestException>(() =>
-            service.ProcessPaymentAsync(new ProcessPaymentRequest(10, 250m, "payment-key")));
+            service.ProcessPaymentAsync(new ProcessPaymentRequest("PNR10", 250m, "payment-key")));
     }
 
     [TestCase("", 100, "refund-key")]
@@ -218,7 +218,7 @@ public class PaymentServiceTests
     {
         return new Payment
         {
-            BookingId = 10,
+            BookingPnr = "PNR10",
             Amount = 250m,
             PaymentStatus = status,
             IdempotencyKey = idempotencyKey,

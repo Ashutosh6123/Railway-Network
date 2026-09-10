@@ -14,7 +14,7 @@ public class PaymentDbContext(DbContextOptions<PaymentDbContext> options) : DbCo
             entity.ToTable("Payments");
             entity.HasKey(payment => payment.Id);
             entity.Property(payment => payment.Id).ValueGeneratedOnAdd();
-            entity.Property(payment => payment.BookingId).IsRequired();
+            entity.Property(payment => payment.BookingPnr).IsRequired().HasMaxLength(50);
             entity.Property(payment => payment.Amount).IsRequired().HasPrecision(18, 2);
             entity.Property(payment => payment.PaymentStatus).IsRequired();
             entity.Property(payment => payment.TransactionReference).IsRequired().HasMaxLength(200);

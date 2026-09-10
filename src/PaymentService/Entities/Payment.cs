@@ -6,8 +6,8 @@ public class Payment
 {
     public int Id { get; set; }
 
-    // This is a logical reference to Reservation Service's Booking.
-    public int BookingId { get; set; }
+    // This is a logical reference to Reservation Service's Booking PNR.
+    public string BookingPnr { get; set; } = string.Empty;
 
     public decimal Amount { get; set; }
 

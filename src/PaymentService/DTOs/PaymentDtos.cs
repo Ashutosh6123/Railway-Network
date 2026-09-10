@@ -3,12 +3,12 @@ using PaymentService.Enums;
 namespace PaymentService.DTOs;
 
 public record ProcessPaymentRequest(
-    int BookingId,
+    string BookingPnr,
     decimal Amount,
     string IdempotencyKey);
 
 public record ProcessPaymentHttpRequest(
-    int BookingId,
+    string BookingPnr,
     decimal Amount);
 
 public record RefundPaymentRequest(
@@ -21,7 +21,7 @@ public record RefundPaymentHttpRequest(
     decimal Amount);
 
 public record PaymentResultDto(
-    int BookingId,
+    string BookingPnr,
     decimal Amount,
     PaymentStatus PaymentStatus,
     string? TransactionReference,

@@ -16,7 +16,7 @@ public class PaymentControllerTests
         var controller = CreateController(paymentService);
 
         var response = await controller.ProcessPayment(
-            new ProcessPaymentHttpRequest(1, 1000m),
+            new ProcessPaymentHttpRequest("PNR1", 1000m),
             "valid-internal-key",
             "payment-key-1");
 
@@ -35,7 +35,7 @@ public class PaymentControllerTests
         var controller = CreateController(paymentService);
 
         var response = await controller.ProcessPayment(
-            new ProcessPaymentHttpRequest(1, 1000m),
+            new ProcessPaymentHttpRequest("PNR1", 1000m),
             null,
             "payment-key-1");
 
@@ -50,7 +50,7 @@ public class PaymentControllerTests
         var controller = CreateController(paymentService);
 
         var response = await controller.ProcessPayment(
-            new ProcessPaymentHttpRequest(1, 1000m),
+            new ProcessPaymentHttpRequest("PNR1", 1000m),
             "incorrect-key",
             "payment-key-1");
 
@@ -65,7 +65,7 @@ public class PaymentControllerTests
         var controller = CreateController(paymentService);
 
         Assert.ThrowsAsync<ArgumentException>(() => controller.ProcessPayment(
-            new ProcessPaymentHttpRequest(1, 1000m),
+            new ProcessPaymentHttpRequest("PNR1", 1000m),
             "valid-internal-key",
             " "));
         Assert.That(paymentService.PaymentRequests, Is.Empty);
@@ -139,8 +139,8 @@ public class PaymentControllerTests
         var paymentService = new FakePaymentService();
         var controller = CreateController(paymentService);
 
-        await controller.ProcessPayment(new ProcessPaymentHttpRequest(1, 1000m), "valid-internal-key", "payment-key-1");
-        await controller.ProcessPayment(new ProcessPaymentHttpRequest(1, 1000m), "valid-internal-key", "payment-key-1");
+        await controller.ProcessPayment(new ProcessPaymentHttpRequest("PNR1", 1000m), "valid-internal-key", "payment-key-1");
+        await controller.ProcessPayment(new ProcessPaymentHttpRequest("PNR1", 1000m), "valid-internal-key", "payment-key-1");
 
         Assert.That(paymentService.PaymentRequests, Has.Count.EqualTo(2));
         Assert.That(paymentService.PaymentRequests.Select(request => request.IdempotencyKey),
@@ -189,7 +189,7 @@ public class PaymentControllerTests
         {
             PaymentRequests.Add(request);
             return Task.FromResult(new PaymentResultDto(
-                request.BookingId,
+                request.BookingPnr,
                 request.Amount,
                 PaymentStatus.Successful,
                 "dummy_payment_1"));
@@ -199,7 +199,7 @@ public class PaymentControllerTests
         {
             RefundRequests.Add(request);
             return Task.FromResult(new PaymentResultDto(
-                1,
+                "PNR1",
                 request.Amount,
                 PaymentStatus.Refunded,
                 request.TransactionReference));
