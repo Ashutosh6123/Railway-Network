@@ -124,7 +124,9 @@ public class TrainServiceTests
             new FakeTrainRepository(trains),
             new FakeRouteStopRepository(routeStops),
             new FakeStationRepository(stations),
-            new FakeFareRepository(fares));
+            new FakeFareRepository(fares),
+            new FakeCoachRepository(),
+            new FakeSeatRepository());
     }
 
     private sealed class FakeTrainRepository(List<Train> trains) : ITrainRepository
@@ -165,5 +167,23 @@ public class TrainServiceTests
         public Task AddAsync(Fare fare) => Task.CompletedTask;
         public Task UpdateAsync(Fare fare) => Task.CompletedTask;
         public Task DeleteAsync(Fare fare) => Task.CompletedTask;
+    }
+
+    private sealed class FakeCoachRepository : ICoachRepository
+    {
+        public Task<Coach?> GetByIdAsync(int id) => Task.FromResult<Coach?>(null);
+        public Task<List<Coach>> GetByTrainIdAsync(int trainId) => Task.FromResult(new List<Coach>());
+        public Task AddAsync(Coach coach) => Task.CompletedTask;
+        public Task UpdateAsync(Coach coach) => Task.CompletedTask;
+        public Task DeleteAsync(Coach coach) => Task.CompletedTask;
+    }
+
+    private sealed class FakeSeatRepository : ISeatRepository
+    {
+        public Task<Seat?> GetByIdAsync(int id) => Task.FromResult<Seat?>(null);
+        public Task<List<Seat>> GetByCoachIdAsync(int coachId) => Task.FromResult(new List<Seat>());
+        public Task AddAsync(Seat seat) => Task.CompletedTask;
+        public Task UpdateAsync(Seat seat) => Task.CompletedTask;
+        public Task DeleteAsync(Seat seat) => Task.CompletedTask;
     }
 }

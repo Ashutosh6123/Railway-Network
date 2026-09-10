@@ -8,7 +8,9 @@ public class TrainService(
     ITrainRepository trainRepository,
     IRouteStopRepository routeStopRepository,
     IStationRepository stationRepository,
-    IFareRepository fareRepository) : ITrainService
+    IFareRepository fareRepository,
+    ICoachRepository coachRepository,
+    ISeatRepository seatRepository) : ITrainService
 {
     public async Task<List<TrainDto>> SearchTrainsAsync(int fromStationId, int toStationId)
     {
@@ -98,6 +100,30 @@ public class TrainService(
             fare.ToStationId,
             fare.CoachType,
             fare.Amount);
+    }
+
+    public async Task<List<SeatInventoryDto>> GetSeatInventoryAsync(int trainId, CoachType coachType)
+    {
+        await GetTrainAsync(trainId);
+
+        var coaches = await coachRepository.GetByTrainIdAsync(trainId);
+        var seats = new List<SeatInventoryDto>();
+
+        foreach (var coach in coaches.Where(coach => coach.CoachType == coachType))
+        {
+            var coachSeats = await seatRepository.GetByCoachIdAsync(coach.Id);
+
+            foreach (var seat in coachSeats)
+            {
+                seats.Add(new SeatInventoryDto(
+                    coach.Id,
+                    coach.CoachNumber,
+                    seat.Id,
+                    seat.SeatNumber));
+            }
+        }
+
+        return seats;
     }
 
     private static TrainDto MapTrain(Entities.Train train) =>

@@ -18,3 +18,9 @@ public record FareDto(
     int ToStationId,
     CoachType CoachType,
     decimal Amount);
+
+public record SeatInventoryDto(
+    int CoachId,
+    string CoachNumber,
+    int SeatId,
+    string SeatNumber);

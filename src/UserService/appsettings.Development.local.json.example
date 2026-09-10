@@ -1,5 +1,8 @@
 {
   "ConnectionStrings": {
     "UserDb": "Server=YOUR_SERVER;Database=RailwayUserDb;User Id=YOUR_USERNAME;Password=YOUR_PASSWORD;TrustServerCertificate=True"
+  },
+  "InternalService": {
+    "ApiKey": "YOUR_DEVELOPMENT_INTERNAL_SERVICE_API_KEY"
   }
 }

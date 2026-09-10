@@ -119,6 +119,9 @@ public class TrainControllerTests
 
         public Task<FareDto> GetFareAsync(int trainId, int fromStationId, int toStationId, CoachType coachType) =>
             Task.FromResult(new FareDto(trainId, fromStationId, toStationId, coachType, 450m));
+
+        public Task<List<SeatInventoryDto>> GetSeatInventoryAsync(int trainId, CoachType coachType) =>
+            Task.FromResult(new List<SeatInventoryDto>());
     }
 
     private sealed class FakeTrainAdminService : ITrainAdminService
