@@ -35,7 +35,7 @@ public class PaymentIdempotencyConcurrencyTests
         var repository = new InMemoryPaymentRepository(payment);
         var gateway = new CountingPaymentGateway();
         var service = CreateService(repository, gateway);
-        var request = new RefundPaymentRequest(payment.TransactionReference, payment.Amount, "refund-key-1");
+        var request = new RefundPaymentRequest(payment.BookingPnr, payment.Amount, "refund-key-1");
 
         await service.RefundAsync(request);
         await service.RefundAsync(request);
@@ -57,7 +57,7 @@ public class PaymentIdempotencyConcurrencyTests
         var payment = repository.GetStoredPayment("payment-key-1")!;
 
         await service.RefundAsync(new RefundPaymentRequest(
-            payment.TransactionReference,
+            payment.BookingPnr,
             payment.Amount,
             "refund-key-1"));
 
@@ -90,7 +90,7 @@ public class PaymentIdempotencyConcurrencyTests
         var repository = new InMemoryPaymentRepository(payment, waitForRefundKeyLookups: true);
         var gateway = new CountingPaymentGateway();
         var service = CreateService(repository, gateway);
-        var request = new RefundPaymentRequest(payment.TransactionReference, payment.Amount, "refund-key-1");
+        var request = new RefundPaymentRequest(payment.BookingPnr, payment.Amount, "refund-key-1");
 
         await Task.WhenAll(
             service.RefundAsync(request),
@@ -134,7 +134,7 @@ public class PaymentIdempotencyConcurrencyTests
     {
         private readonly ConcurrentDictionary<string, Payment> _paymentsByIdempotencyKey = new();
         private readonly ConcurrentDictionary<string, Payment> _paymentsByRefundIdempotencyKey = new();
-        private Payment? _paymentByTransactionReference;
+        private Payment? _paymentByBookingPnr;
         private readonly bool _waitForPaymentKeyLookups;
         private readonly bool _waitForRefundKeyLookups;
         private readonly TaskCompletionSource _paymentLookupBarrier = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -150,7 +150,7 @@ public class PaymentIdempotencyConcurrencyTests
             bool waitForPaymentKeyLookups = false,
             bool waitForRefundKeyLookups = false)
         {
-            _paymentByTransactionReference = payment;
+            _paymentByBookingPnr = payment;
             _waitForPaymentKeyLookups = waitForPaymentKeyLookups;
             _waitForRefundKeyLookups = waitForRefundKeyLookups;
 
@@ -201,8 +201,15 @@ public class PaymentIdempotencyConcurrencyTests
 
         public Task<Payment?> GetByTransactionReferenceAsync(string transactionReference)
         {
-            return Task.FromResult(_paymentByTransactionReference?.TransactionReference == transactionReference
-                ? CreateCopy(_paymentByTransactionReference)
+            return Task.FromResult(_paymentByBookingPnr?.TransactionReference == transactionReference
+                ? CreateCopy(_paymentByBookingPnr)
+                : null);
+        }
+
+        public Task<Payment?> GetByBookingPnrAsync(string bookingPnr)
+        {
+            return Task.FromResult(_paymentByBookingPnr?.BookingPnr == bookingPnr
+                ? CreateCopy(_paymentByBookingPnr)
                 : null);
         }
 
@@ -213,17 +220,17 @@ public class PaymentIdempotencyConcurrencyTests
                 return Task.FromResult(false);
             }
 
-            if (_paymentByTransactionReference is null ||
-                _paymentByTransactionReference.Id != paymentId ||
-                _paymentByTransactionReference.PaymentStatus != PaymentStatus.Successful ||
-                _paymentByTransactionReference.RefundIdempotencyKey is not null)
+            if (_paymentByBookingPnr is null ||
+                _paymentByBookingPnr.Id != paymentId ||
+                _paymentByBookingPnr.PaymentStatus != PaymentStatus.Successful ||
+                _paymentByBookingPnr.RefundIdempotencyKey is not null)
             {
                 return Task.FromResult(false);
             }
 
-            _paymentByTransactionReference.RefundIdempotencyKey = refundIdempotencyKey;
-            _paymentByTransactionReference.RefundStatus = RefundStatus.Pending;
-            _paymentsByRefundIdempotencyKey.TryAdd(refundIdempotencyKey, _paymentByTransactionReference);
+            _paymentByBookingPnr.RefundIdempotencyKey = refundIdempotencyKey;
+            _paymentByBookingPnr.RefundStatus = RefundStatus.Pending;
+            _paymentsByRefundIdempotencyKey.TryAdd(refundIdempotencyKey, _paymentByBookingPnr);
             return Task.FromResult(true);
         }
 
@@ -236,7 +243,7 @@ public class PaymentIdempotencyConcurrencyTests
                 throw new DbUpdateException("A payment with this idempotency key already exists.");
             }
 
-            _paymentByTransactionReference = payment;
+            _paymentByBookingPnr = payment;
 
             return Task.CompletedTask;
         }
@@ -245,7 +252,7 @@ public class PaymentIdempotencyConcurrencyTests
         {
             Interlocked.Increment(ref _updateCallCount);
             LatestUpdatedPayment = payment;
-            _paymentByTransactionReference = payment;
+            _paymentByBookingPnr = payment;
 
             if (!string.IsNullOrWhiteSpace(payment.RefundIdempotencyKey))
             {

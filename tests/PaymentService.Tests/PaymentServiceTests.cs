@@ -102,28 +102,28 @@ public class PaymentServiceTests
     }
 
     [TestCase("", 100, "refund-key")]
-    [TestCase("dummy_payment_1", 0, "refund-key")]
-    [TestCase("dummy_payment_1", 100, " ")]
-    public void RefundAsync_RejectsInvalidInput(string transactionReference, decimal amount, string idempotencyKey)
+    [TestCase("PNR10", 0, "refund-key")]
+    [TestCase("PNR10", 100, " ")]
+    public void RefundAsync_RejectsInvalidInput(string bookingPnr, decimal amount, string idempotencyKey)
     {
         var service = CreateService();
 
         Assert.ThrowsAsync<ArgumentException>(() =>
-            service.RefundAsync(new RefundPaymentRequest(transactionReference, amount, idempotencyKey)));
+            service.RefundAsync(new RefundPaymentRequest(bookingPnr, amount, idempotencyKey)));
     }
 
     [Test]
     public async Task RefundAsync_RefundsSuccessfulPaymentAndPreservesPaymentIdempotencyKey()
     {
         var payment = CreatePayment(PaymentStatus.Successful, "payment-key", "dummy_payment_1");
-        var repository = new FakePaymentRepository { PaymentByTransactionReference = payment };
+        var repository = new FakePaymentRepository { PaymentByBookingPnr = payment };
         var gateway = new FakePaymentGateway
         {
             RefundResult = new RefundGatewayResult(true, "dummy_refund_1", "Refund succeeded.")
         };
         var service = CreateService(repository, gateway);
 
-        var result = await service.RefundAsync(new RefundPaymentRequest("dummy_payment_1", 250m, "refund-key"));
+        var result = await service.RefundAsync(new RefundPaymentRequest("PNR10", 250m, "refund-key"));
 
         Assert.That(result.PaymentStatus, Is.EqualTo(PaymentStatus.Refunded));
         Assert.That(payment.RefundIdempotencyKey, Is.EqualTo("refund-key"));
@@ -131,6 +131,7 @@ public class PaymentServiceTests
         Assert.That(payment.RefundStatus, Is.EqualTo(RefundStatus.Successful));
         Assert.That(repository.UpdatedPayments, Has.Count.EqualTo(1));
         Assert.That(gateway.RefundCallCount, Is.EqualTo(1));
+        Assert.That(gateway.LastRefundTransactionReference, Is.EqualTo("dummy_payment_1"));
     }
 
     [Test]
@@ -142,7 +143,7 @@ public class PaymentServiceTests
         var gateway = new FakePaymentGateway();
         var service = CreateService(repository, gateway);
 
-        var result = await service.RefundAsync(new RefundPaymentRequest("dummy_payment_1", 250m, "refund-key"));
+        var result = await service.RefundAsync(new RefundPaymentRequest("PNR10", 250m, "refund-key"));
 
         Assert.That(result.PaymentStatus, Is.EqualTo(PaymentStatus.Refunded));
         Assert.That(gateway.RefundCallCount, Is.Zero);
@@ -153,14 +154,14 @@ public class PaymentServiceTests
     public async Task RefundAsync_DoesNotMarkPaymentRefundedWhenProviderFails()
     {
         var payment = CreatePayment(PaymentStatus.Successful, "payment-key", "dummy_payment_1");
-        var repository = new FakePaymentRepository { PaymentByTransactionReference = payment };
+        var repository = new FakePaymentRepository { PaymentByBookingPnr = payment };
         var gateway = new FakePaymentGateway
         {
             RefundResult = new RefundGatewayResult(false, null, "Refund failed.")
         };
         var service = CreateService(repository, gateway);
 
-        var result = await service.RefundAsync(new RefundPaymentRequest("dummy_payment_1", 250m, "refund-key"));
+        var result = await service.RefundAsync(new RefundPaymentRequest("PNR10", 250m, "refund-key"));
 
         Assert.That(result.PaymentStatus, Is.EqualTo(PaymentStatus.Successful));
         Assert.That(payment.PaymentStatus, Is.EqualTo(PaymentStatus.Successful));
@@ -176,25 +177,25 @@ public class PaymentServiceTests
     {
         var repository = new FakePaymentRepository
         {
-            PaymentByTransactionReference = paymentStatus is null
+            PaymentByBookingPnr = paymentStatus is null
                 ? null
                 : CreatePayment(paymentStatus.Value, "payment-key", "dummy_payment_1")
         };
         var service = CreateService(repository);
 
         Assert.ThrowsAsync<InvalidOperationException>(() =>
-            service.RefundAsync(new RefundPaymentRequest("dummy_payment_1", 250m, "refund-key")));
+            service.RefundAsync(new RefundPaymentRequest("PNR10", 250m, "refund-key")));
     }
 
     [Test]
     public void RefundAsync_RejectsAnAmountDifferentFromThePaymentAmount()
     {
         var payment = CreatePayment(PaymentStatus.Successful, "payment-key", "dummy_payment_1");
-        var repository = new FakePaymentRepository { PaymentByTransactionReference = payment };
+        var repository = new FakePaymentRepository { PaymentByBookingPnr = payment };
         var service = CreateService(repository);
 
         Assert.ThrowsAsync<ArgumentException>(() =>
-            service.RefundAsync(new RefundPaymentRequest("dummy_payment_1", 100m, "refund-key")));
+            service.RefundAsync(new RefundPaymentRequest("PNR10", 100m, "refund-key")));
     }
 
     private static PaymentService.Services.PaymentService CreateService(
@@ -231,7 +232,7 @@ public class PaymentServiceTests
     {
         public Payment? PaymentByIdempotencyKey { get; init; }
         public Payment? PaymentByRefundIdempotencyKey { get; init; }
-        public Payment? PaymentByTransactionReference { get; init; }
+        public Payment? PaymentByBookingPnr { get; init; }
         public List<Payment> AddedPayments { get; } = [];
         public List<Payment> UpdatedPayments { get; } = [];
 
@@ -243,8 +244,11 @@ public class PaymentServiceTests
         public Task<Payment?> GetByRefundIdempotencyKeyAsync(string refundIdempotencyKey) =>
             Task.FromResult(PaymentByRefundIdempotencyKey);
 
+        public Task<Payment?> GetByBookingPnrAsync(string bookingPnr) =>
+            Task.FromResult(PaymentByBookingPnr);
+
         public Task<Payment?> GetByTransactionReferenceAsync(string transactionReference) =>
-            Task.FromResult(PaymentByTransactionReference);
+            Task.FromResult<Payment?>(null);
 
         public Task<bool> TryClaimRefundAsync(int paymentId, string refundIdempotencyKey) =>
             Task.FromResult(true);
@@ -270,6 +274,7 @@ public class PaymentServiceTests
         public int ProcessCallCount { get; private set; }
         public int RefundCallCount { get; private set; }
         public string? LastPaymentReference { get; private set; }
+        public string? LastRefundTransactionReference { get; private set; }
         public bool LastSimulateSuccess { get; private set; }
 
         public Task<PaymentGatewayResult> ProcessPaymentAsync(string paymentReference, decimal amount, bool simulateSuccess)
@@ -286,6 +291,7 @@ public class PaymentServiceTests
         public Task<RefundGatewayResult> RefundAsync(string providerTransactionReference, decimal amount)
         {
             RefundCallCount++;
+            LastRefundTransactionReference = providerTransactionReference;
             return Task.FromResult(RefundResult);
         }
     }

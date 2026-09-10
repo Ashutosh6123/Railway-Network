@@ -89,7 +89,7 @@ public class PaymentService(
             return ToResultDto(existingRefund);
         }
 
-        var payment = await paymentRepository.GetByTransactionReferenceAsync(request.TransactionReference);
+        var payment = await paymentRepository.GetByBookingPnrAsync(request.BookingPnr);
 
         if (payment is null)
         {
@@ -117,7 +117,7 @@ public class PaymentService(
                 return ToResultDto(concurrentRefund);
             }
 
-            var currentPayment = await paymentRepository.GetByTransactionReferenceAsync(request.TransactionReference);
+            var currentPayment = await paymentRepository.GetByBookingPnrAsync(request.BookingPnr);
 
             if (currentPayment?.RefundIdempotencyKey == request.IdempotencyKey)
             {
@@ -130,7 +130,8 @@ public class PaymentService(
         payment.RefundIdempotencyKey = request.IdempotencyKey;
         payment.RefundStatus = RefundStatus.Pending;
 
-        var gatewayResult = await paymentGateway.RefundAsync(request.TransactionReference, request.Amount);
+        // Reservation Service sends only the booking PNR. The provider receives the stored reference.
+        var gatewayResult = await paymentGateway.RefundAsync(payment.TransactionReference, request.Amount);
 
         if (gatewayResult.Success)
         {
@@ -167,9 +168,9 @@ public class PaymentService(
 
     private static void ValidateRefundRequest(RefundPaymentRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.TransactionReference))
+        if (string.IsNullOrWhiteSpace(request.BookingPnr))
         {
-            throw new ArgumentException("Transaction reference is required.");
+            throw new ArgumentException("Booking PNR is required.");
         }
 
         if (request.Amount <= 0)

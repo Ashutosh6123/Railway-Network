@@ -51,7 +51,7 @@ public class PaymentController(
         }
 
         var result = await paymentService.RefundAsync(new RefundPaymentRequest(
-            request.TransactionReference,
+            request.BookingPnr,
             request.Amount,
             idempotencyKey));
 

@@ -1,4 +1,6 @@
+using System.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using ReservationService.Entities;
 
 namespace ReservationService.Data;
@@ -12,6 +14,12 @@ public class ReservationDbContext(DbContextOptions<ReservationDbContext> options
     public DbSet<SeatAllocation> SeatAllocations => Set<SeatAllocation>();
 
     public DbSet<WaitlistEntry> WaitlistEntries => Set<WaitlistEntry>();
+
+    public virtual Task<IDbContextTransaction> BeginTransactionAsync(
+        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
+    {
+        return Database.BeginTransactionAsync(isolationLevel);
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -28,6 +28,14 @@ public class PaymentRepository(PaymentDbContext dbContext) : IPaymentRepository
             .FirstOrDefaultAsync(payment => payment.RefundIdempotencyKey == refundIdempotencyKey);
     }
 
+    public Task<Payment?> GetByBookingPnrAsync(string bookingPnr)
+    {
+        return dbContext.Payments
+            .AsNoTracking()
+            .OrderByDescending(payment => payment.CreatedAt)
+            .FirstOrDefaultAsync(payment => payment.BookingPnr == bookingPnr);
+    }
+
     public Task<Payment?> GetByTransactionReferenceAsync(string transactionReference)
     {
         return dbContext.Payments

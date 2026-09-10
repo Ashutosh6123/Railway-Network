@@ -7,8 +7,8 @@ public class PaymentClient(HttpClient httpClient, IConfiguration configuration) 
     public Task<PaymentClientResult> ProcessPaymentAsync(string bookingPnr, decimal amount, string idempotencyKey) =>
         SendAsync("api/internal/payments/process", new ProcessPaymentRequest(bookingPnr, amount), idempotencyKey);
 
-    public Task<PaymentClientResult> RefundAsync(string transactionReference, decimal amount, string idempotencyKey) =>
-        SendAsync("api/internal/payments/refund", new RefundPaymentRequest(transactionReference, amount), idempotencyKey);
+    public Task<PaymentClientResult> RefundAsync(string bookingPnr, decimal amount, string idempotencyKey) =>
+        SendAsync("api/internal/payments/refund", new RefundPaymentRequest(bookingPnr, amount), idempotencyKey);
 
     private async Task<PaymentClientResult> SendAsync<TRequest>(string requestUri, TRequest requestBody, string idempotencyKey)
     {
@@ -36,5 +36,5 @@ public class PaymentClient(HttpClient httpClient, IConfiguration configuration) 
 
     private record ProcessPaymentRequest(string BookingPnr, decimal Amount);
 
-    private record RefundPaymentRequest(string TransactionReference, decimal Amount);
+    private record RefundPaymentRequest(string BookingPnr, decimal Amount);
 }

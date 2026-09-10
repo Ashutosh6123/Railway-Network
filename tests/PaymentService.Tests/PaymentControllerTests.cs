@@ -78,7 +78,7 @@ public class PaymentControllerTests
         var controller = CreateController(paymentService);
 
         var response = await controller.Refund(
-            new RefundPaymentHttpRequest("dummy_payment_1", 1000m),
+            new RefundPaymentHttpRequest("PNR1", 1000m),
             "valid-internal-key",
             "refund-key-1");
 
@@ -87,6 +87,7 @@ public class PaymentControllerTests
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.StatusCode, Is.EqualTo(200));
         Assert.That(paymentService.RefundRequests, Has.Count.EqualTo(1));
+        Assert.That(paymentService.RefundRequests[0].BookingPnr, Is.EqualTo("PNR1"));
         Assert.That(paymentService.RefundRequests[0].IdempotencyKey, Is.EqualTo("refund-key-1"));
     }
 
@@ -97,7 +98,7 @@ public class PaymentControllerTests
         var controller = CreateController(paymentService);
 
         var response = await controller.Refund(
-            new RefundPaymentHttpRequest("dummy_payment_1", 1000m),
+            new RefundPaymentHttpRequest("PNR1", 1000m),
             null,
             "refund-key-1");
 
@@ -112,7 +113,7 @@ public class PaymentControllerTests
         var controller = CreateController(paymentService);
 
         var response = await controller.Refund(
-            new RefundPaymentHttpRequest("dummy_payment_1", 1000m),
+            new RefundPaymentHttpRequest("PNR1", 1000m),
             "incorrect-key",
             "refund-key-1");
 
@@ -127,7 +128,7 @@ public class PaymentControllerTests
         var controller = CreateController(paymentService);
 
         Assert.ThrowsAsync<ArgumentException>(() => controller.Refund(
-            new RefundPaymentHttpRequest("dummy_payment_1", 1000m),
+            new RefundPaymentHttpRequest("PNR1", 1000m),
             "valid-internal-key",
             null));
         Assert.That(paymentService.RefundRequests, Is.Empty);
@@ -153,8 +154,8 @@ public class PaymentControllerTests
         var paymentService = new FakePaymentService();
         var controller = CreateController(paymentService);
 
-        await controller.Refund(new RefundPaymentHttpRequest("dummy_payment_1", 1000m), "valid-internal-key", "refund-key-1");
-        await controller.Refund(new RefundPaymentHttpRequest("dummy_payment_1", 1000m), "valid-internal-key", "refund-key-1");
+        await controller.Refund(new RefundPaymentHttpRequest("PNR1", 1000m), "valid-internal-key", "refund-key-1");
+        await controller.Refund(new RefundPaymentHttpRequest("PNR1", 1000m), "valid-internal-key", "refund-key-1");
 
         Assert.That(paymentService.RefundRequests, Has.Count.EqualTo(2));
         Assert.That(paymentService.RefundRequests.Select(request => request.IdempotencyKey),
@@ -166,6 +167,7 @@ public class PaymentControllerTests
     {
         Assert.That(typeof(ProcessPaymentHttpRequest).GetProperty("IdempotencyKey"), Is.Null);
         Assert.That(typeof(RefundPaymentHttpRequest).GetProperty("IdempotencyKey"), Is.Null);
+        Assert.That(typeof(RefundPaymentHttpRequest).GetProperty("TransactionReference"), Is.Null);
     }
 
     private static PaymentController CreateController(FakePaymentService paymentService)
@@ -202,7 +204,7 @@ public class PaymentControllerTests
                 "PNR1",
                 request.Amount,
                 PaymentStatus.Refunded,
-                request.TransactionReference));
+                "dummy_payment_1"));
         }
     }
 }

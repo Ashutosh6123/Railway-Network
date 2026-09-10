@@ -12,12 +12,12 @@ public record ProcessPaymentHttpRequest(
     decimal Amount);
 
 public record RefundPaymentRequest(
-    string TransactionReference,
+    string BookingPnr,
     decimal Amount,
     string IdempotencyKey);
 
 public record RefundPaymentHttpRequest(
-    string TransactionReference,
+    string BookingPnr,
     decimal Amount);
 
 public record PaymentResultDto(

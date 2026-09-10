@@ -116,10 +116,12 @@ public class ReservationHttpClientTests
         var handler = new FakeHttpMessageHandler(_ => JsonResponse(new PaymentClientResult("PNR123", 450m, 3, "payment_1", 1)));
         var client = new PaymentClient(CreateHttpClient(handler), CreateConfiguration());
 
-        var result = await client.RefundAsync("payment_1", 450m, "refund-key-1");
+        var result = await client.RefundAsync("PNR123", 450m, "refund-key-1");
 
         Assert.That(result.RefundStatus, Is.EqualTo(1));
         Assert.That(handler.Requests[0].Headers["Idempotency-Key"], Is.EqualTo("refund-key-1"));
+        Assert.That(handler.Requests[0].Body, Does.Contain("PNR123"));
+        Assert.That(handler.Requests[0].Body, Does.Not.Contain("TransactionReference"));
     }
 
     [Test]

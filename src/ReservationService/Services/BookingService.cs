@@ -64,7 +64,7 @@ public class BookingService(
 
             try
             {
-                await paymentClient.RefundAsync(payment.TransactionReference, totalFare, Guid.NewGuid().ToString("N"));
+                await paymentClient.RefundAsync(pnr, totalFare, Guid.NewGuid().ToString("N"));
             }
             catch (Exception refundException)
             {
@@ -73,6 +73,196 @@ public class BookingService(
 
             throw;
         }
+    }
+
+    public async Task<BookingResponse> CancelBookingAsync(int userId, string pnr)
+    {
+        if (userId <= 0 || string.IsNullOrWhiteSpace(pnr))
+        {
+            throw new ArgumentException("User ID and PNR are required.");
+        }
+
+        var booking = await bookingRepository.GetByPnrAsync(pnr)
+            ?? throw new InvalidOperationException("Booking was not found.");
+
+        if (booking.UserId != userId)
+        {
+            throw new UnauthorizedAccessException("Only the booking owner can cancel this booking.");
+        }
+
+        if (booking.Status == BookingStatus.Cancelled)
+        {
+            throw new InvalidOperationException("Booking is already cancelled.");
+        }
+
+        if (booking.Status is not (BookingStatus.Confirmed or BookingStatus.Waitlisted))
+        {
+            throw new InvalidOperationException("Booking cannot be cancelled.");
+        }
+
+        await EnsureJourneyHasNotStartedAsync(booking);
+
+        var passengers = await bookingPassengerRepository.GetByBookingIdAsync(booking.Id);
+        var wasConfirmed = booking.Status == BookingStatus.Confirmed;
+
+        await using (var transaction = await dbContext.BeginTransactionAsync())
+        {
+            var now = DateTime.UtcNow;
+            booking.Status = BookingStatus.Cancelled;
+            booking.CancelledAt = now;
+            booking.UpdatedAt = now;
+            await bookingRepository.UpdateAsync(booking);
+
+            if (wasConfirmed)
+            {
+                var allocations = await seatAllocationRepository.GetByBookingIdAsync(booking.Id);
+                await seatAllocationRepository.RemoveRangeAsync(allocations);
+            }
+            else
+            {
+                var waitlistEntry = await waitlistRepository.GetByBookingIdAsync(booking.Id);
+
+                if (waitlistEntry is not null)
+                {
+                    await waitlistRepository.RemoveAsync(waitlistEntry);
+                }
+            }
+
+            await transaction.CommitAsync();
+        }
+
+        // The refund is outside the Reservation database transaction because Payment Service has its own database.
+        // If it fails, the cancellation remains recorded but this method reports the failure explicitly.
+        try
+        {
+            var refund = await paymentClient.RefundAsync(booking.Pnr, booking.TotalFare, Guid.NewGuid().ToString("N"));
+
+            if (refund.RefundStatus != 1)
+            {
+                throw new InvalidOperationException("Payment Service did not complete the refund.");
+            }
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(exception, "Refund failed for cancelled booking PNR {Pnr}.", booking.Pnr);
+            throw new InvalidOperationException("Booking was cancelled, but the refund failed.", exception);
+        }
+
+        var response = CreateCancelledResponse(booking, passengers);
+        await SendCancellationNotificationAsync(booking, response);
+
+        if (wasConfirmed)
+        {
+            await PromoteEarliestWaitlistedBookingAsync();
+        }
+
+        return response;
+    }
+
+    public async Task<ReservationDetailsResponse> GetReservationAsync(int userId, string pnr)
+    {
+        if (userId <= 0 || string.IsNullOrWhiteSpace(pnr))
+        {
+            throw new ArgumentException("User ID and PNR are required.");
+        }
+
+        var booking = await bookingRepository.GetByPnrAsync(pnr)
+            ?? throw new KeyNotFoundException("Booking was not found.");
+
+        if (booking.UserId != userId)
+        {
+            throw new UnauthorizedAccessException("Only the booking owner can view this reservation.");
+        }
+
+        var passengers = await bookingPassengerRepository.GetByBookingIdAsync(booking.Id);
+        var allocations = await seatAllocationRepository.GetByBookingIdAsync(booking.Id);
+        var responses = passengers.Select(passenger =>
+        {
+            var allocation = allocations.FirstOrDefault(item => item.BookingPassengerId == passenger.Id);
+            return new BookingPassengerResponse(
+                passenger.Id,
+                passenger.Name,
+                allocation?.CoachId.ToString(),
+                allocation?.SeatId.ToString());
+        }).ToList();
+
+        return new ReservationDetailsResponse(
+            booking.Pnr,
+            booking.Status,
+            booking.TrainId,
+            booking.FromStationId,
+            booking.ToStationId,
+            booking.JourneyDate,
+            booking.CoachType,
+            booking.Quota,
+            booking.TotalFare,
+            responses);
+    }
+
+    public async Task<bool> PromoteEarliestWaitlistedBookingAsync()
+    {
+        // SERIALIZABLE prevents two promotion requests from allocating the same released seat.
+        await using var transaction = await dbContext.BeginTransactionAsync(IsolationLevel.Serializable);
+
+        var waitlistEntries = await waitlistRepository.GetAllOrderedByPositionAsync();
+        var earliestEntry = waitlistEntries.FirstOrDefault();
+
+        if (earliestEntry is null)
+        {
+            return false;
+        }
+
+        var booking = await bookingRepository.GetByIdAsync(earliestEntry.BookingId);
+
+        if (booking is null || booking.Status != BookingStatus.Waitlisted)
+        {
+            return false;
+        }
+
+        if (await HasJourneyStartedAsync(booking))
+        {
+            return false;
+        }
+
+        var passengers = await bookingPassengerRepository.GetByBookingIdAsync(booking.Id);
+        var availability = await availabilityService.GetAvailabilityAsync(
+            booking.TrainId,
+            booking.FromStationId,
+            booking.ToStationId,
+            booking.JourneyDate.Date,
+            booking.CoachType);
+
+        // Strict FIFO: if this first booking does not fit completely, no later booking is considered.
+        if (availability.AvailableSeats.Count < passengers.Count)
+        {
+            return false;
+        }
+
+        var allocations = new List<SeatAllocation>();
+
+        for (var index = 0; index < passengers.Count; index++)
+        {
+            var seat = availability.AvailableSeats[index];
+            allocations.Add(new SeatAllocation
+            {
+                BookingId = booking.Id,
+                BookingPassengerId = passengers[index].Id,
+                CoachId = seat.CoachId,
+                SeatId = seat.SeatId,
+                FromStationId = booking.FromStationId,
+                ToStationId = booking.ToStationId
+            });
+        }
+
+        await seatAllocationRepository.AddRangeAsync(allocations);
+        booking.Status = BookingStatus.Confirmed;
+        booking.UpdatedAt = DateTime.UtcNow;
+        await bookingRepository.UpdateAsync(booking);
+        await waitlistRepository.RemoveAsync(earliestEntry);
+        await transaction.CommitAsync();
+
+        await SendPromotionNotificationAsync(booking, passengers, availability.AvailableSeats);
+        return true;
     }
 
     private async Task<BookingResponse> PersistBookingAsync(
@@ -84,7 +274,7 @@ public class BookingService(
     {
         // SERIALIZABLE makes the final availability check and allocation one atomic operation.
         // A concurrent request must wait and re-check before it can allocate the same seat segment.
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+        await using var transaction = await dbContext.BeginTransactionAsync(IsolationLevel.Serializable);
 
         var finalAvailability = await availabilityService.GetAvailabilityAsync(
             request.TrainId,
@@ -202,6 +392,83 @@ public class BookingService(
         {
             logger.LogError(exception, "Notification failed for PNR {Pnr}. The booking remains successful.", response.Pnr);
         }
+    }
+
+    private async Task EnsureJourneyHasNotStartedAsync(Booking booking)
+    {
+        if (await HasJourneyStartedAsync(booking))
+        {
+            throw new InvalidOperationException("Booking cannot be cancelled after departure.");
+        }
+    }
+
+    private async Task<bool> HasJourneyStartedAsync(Booking booking)
+    {
+        var routeStops = await trainClient.GetRouteAsync(booking.TrainId);
+        var fromStop = routeStops.FirstOrDefault(stop => stop.StationId == booking.FromStationId)
+            ?? throw new InvalidOperationException("Booking origin station was not found on the train route.");
+        var scheduledDeparture = booking.JourneyDate.Date.Add(fromStop.DepartureTime);
+
+        return DateTime.UtcNow >= scheduledDeparture;
+    }
+
+    private static BookingResponse CreateCancelledResponse(Booking booking, List<BookingPassenger> passengers)
+    {
+        return new BookingResponse(
+            booking.Pnr,
+            booking.Status,
+            booking.TotalFare,
+            passengers.Select(passenger => new BookingPassengerResponse(
+                passenger.Id,
+                passenger.Name,
+                null,
+                null)).ToList());
+    }
+
+    private async Task SendCancellationNotificationAsync(Booking booking, BookingResponse response)
+    {
+        try
+        {
+            var user = await userClient.GetUserAsync(booking.UserId)
+                ?? throw new InvalidOperationException("User was not found.");
+            await mailClient.SendAsync(user.Email, "Cancellation", CreateNotificationData(booking));
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(exception, "Cancellation notification failed for PNR {Pnr}. The cancellation remains successful.", response.Pnr);
+        }
+    }
+
+    private async Task SendPromotionNotificationAsync(
+        Booking booking,
+        List<BookingPassenger> passengers,
+        List<AvailableSeat> availableSeats)
+    {
+        try
+        {
+            var user = await userClient.GetUserAsync(booking.UserId)
+                ?? throw new InvalidOperationException("User was not found.");
+            var data = CreateNotificationData(booking);
+            data["coach"] = availableSeats[0].CoachNumber;
+            data["seat"] = availableSeats[0].SeatNumber;
+            await mailClient.SendAsync(user.Email, "WaitlistPromotion", data);
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(exception, "Waitlist promotion notification failed for PNR {Pnr}. The promotion remains successful.", booking.Pnr);
+        }
+    }
+
+    private static Dictionary<string, string> CreateNotificationData(Booking booking)
+    {
+        return new Dictionary<string, string>
+        {
+            ["pnr"] = booking.Pnr,
+            ["trainNumber"] = booking.TrainId.ToString(),
+            ["journeyDate"] = booking.JourneyDate.Date.ToString("yyyy-MM-dd"),
+            ["from"] = booking.FromStationId.ToString(),
+            ["to"] = booking.ToStationId.ToString()
+        };
     }
 
     private async Task<string> GenerateUniquePnrAsync()

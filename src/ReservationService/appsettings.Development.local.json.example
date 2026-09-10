@@ -10,5 +10,8 @@
   },
   "InternalService": {
     "ApiKey": "YOUR_DEVELOPMENT_INTERNAL_SERVICE_API_KEY"
+  },
+  "Jwt": {
+    "Key": "YOUR_DEVELOPMENT_JWT_SIGNING_KEY"
   }
 }
