@@ -240,21 +240,21 @@ public class ReservationControllerTests
         {
             CreateUserId = userId;
             if (CreateException is not null) throw CreateException;
-            return Task.FromResult(new BookingResponse("PNR123", BookingStatus.Confirmed, 450m, []));
+            return Task.FromResult(new BookingResponse("PNR123", BookingStatus.Confirmed, 450m, [], null));
         }
         public Task<ReservationDetailsResponse> GetReservationAsync(int userId, string pnr)
         {
             GetUserId = userId;
             if (GetException is not null) throw GetException;
-            return Task.FromResult(new ReservationDetailsResponse(pnr, BookingStatus.Confirmed, 1, 1, 2, DateTime.UtcNow.Date, CoachType.Sleeper, QuotaType.General, 450m, []));
+            return Task.FromResult(new ReservationDetailsResponse(pnr, BookingStatus.Confirmed, 1, 1, 2, DateTime.UtcNow.Date, CoachType.Sleeper, QuotaType.General, 450m, [], null));
         }
         public Task<BookingResponse> CancelBookingAsync(int userId, string pnr)
         {
             CancelUserId = userId;
             if (CancelException is not null) throw CancelException;
-            return Task.FromResult(new BookingResponse(pnr, BookingStatus.Cancelled, 450m, []));
+            return Task.FromResult(new BookingResponse(pnr, BookingStatus.Cancelled, 450m, [], null));
         }
-        public Task<bool> PromoteEarliestWaitlistedBookingAsync() => Task.FromResult(false);
+        public Task<bool> PromoteEarliestWaitlistedBookingAsync(int trainId, DateTime journeyDate, CoachType coachType) => Task.FromResult(false);
     }
 
     private sealed class FakeAvailabilityService : IAvailabilityService

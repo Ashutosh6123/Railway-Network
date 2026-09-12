@@ -37,13 +37,13 @@ public sealed class MailNotificationService(
         return request.Template switch
         {
             "BookingConfirmed" => new EmailMessage(request.To, "Railway booking confirmed",
-                $"Your booking with PNR {GetValue(request.Data, "pnr")} is confirmed. Train: {GetValue(request.Data, "trainNumber")}. Journey: {GetValue(request.Data, "journeyDate")} from {GetValue(request.Data, "from")} to {GetValue(request.Data, "to")}. Coach: {GetValue(request.Data, "coach")}, Seat: {GetValue(request.Data, "seat")}."),
+                $"Your booking with PNR {GetValue(request.Data, "pnr")} is confirmed. Train: {GetValue(request.Data, "trainNumber")}. Journey: {GetValue(request.Data, "journeyDate")} from {GetValue(request.Data, "from")} to {GetValue(request.Data, "to")}.{Environment.NewLine}{GetValue(request.Data, "passengerSeats")}"),
             "BookingWaitlisted" => new EmailMessage(request.To, "Railway booking waitlisted",
-                $"Your booking with PNR {GetValue(request.Data, "pnr")} is waitlisted. Train: {GetValue(request.Data, "trainNumber")}. Journey: {GetValue(request.Data, "journeyDate")} from {GetValue(request.Data, "from")} to {GetValue(request.Data, "to")}."),
+                $"Your booking with PNR {GetValue(request.Data, "pnr")} is waitlisted. Train: {GetValue(request.Data, "trainNumber")}. Journey: {GetValue(request.Data, "journeyDate")} from {GetValue(request.Data, "from")} to {GetValue(request.Data, "to")}. Current waitlist position: {GetValue(request.Data, "waitlistPosition")}."),
             "Cancellation" => new EmailMessage(request.To, "Railway booking cancelled",
                 $"Your booking with PNR {GetValue(request.Data, "pnr")} has been cancelled. Train: {GetValue(request.Data, "trainNumber")}. Journey: {GetValue(request.Data, "journeyDate")} from {GetValue(request.Data, "from")} to {GetValue(request.Data, "to")}."),
             "WaitlistPromotion" => new EmailMessage(request.To, "Railway booking confirmed from waitlist",
-                $"Your booking with PNR {GetValue(request.Data, "pnr")} has been confirmed from the waitlist. Train: {GetValue(request.Data, "trainNumber")}. Journey: {GetValue(request.Data, "journeyDate")} from {GetValue(request.Data, "from")} to {GetValue(request.Data, "to")}. Coach: {GetValue(request.Data, "coach")}, Seat: {GetValue(request.Data, "seat")}."),
+                $"Your booking with PNR {GetValue(request.Data, "pnr")} has been confirmed from the waitlist. Train: {GetValue(request.Data, "trainNumber")}. Journey: {GetValue(request.Data, "journeyDate")} from {GetValue(request.Data, "from")} to {GetValue(request.Data, "to")}.{Environment.NewLine}{GetValue(request.Data, "passengerSeats")}"),
             _ => throw new ArgumentException("Unsupported notification template.")
         };
     }

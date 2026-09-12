@@ -1,4 +1,5 @@
 using ReservationService.DTOs;
+using ReservationService.Enums;
 
 namespace ReservationService.Services;
 
@@ -10,5 +11,5 @@ public interface IBookingService
 
     Task<ReservationDetailsResponse> GetReservationAsync(int userId, string pnr);
 
-    Task<bool> PromoteEarliestWaitlistedBookingAsync();
+    Task<bool> PromoteEarliestWaitlistedBookingAsync(int trainId, DateTime journeyDate, CoachType coachType);
 }

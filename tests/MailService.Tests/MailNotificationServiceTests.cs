@@ -45,6 +45,38 @@ public class MailNotificationServiceTests
         Assert.That(response.Message, Is.EqualTo("Notification could not be sent."));
     }
 
+    [TestCase("BookingConfirmed")]
+    [TestCase("WaitlistPromotion")]
+    public async Task SendAsync_RendersAllPassengerSeatLines(string template)
+    {
+        var sender = new FakeSmtpMailSender();
+        var request = CreateRequest(template) with
+        {
+            Data = new Dictionary<string, string>
+            {
+                ["pnr"] = "PNR123", ["trainNumber"] = "12001", ["journeyDate"] = "2026-10-15",
+                ["from"] = "Delhi", ["to"] = "Agra",
+                ["passengerSeats"] = "Rahul — Coach: S2, Seat: 7\nPriya — Coach: S2, Seat: 8"
+            }
+        };
+
+        await CreateService(sender).SendAsync(request);
+
+        Assert.That(sender.Messages.Single().Body, Does.Contain("Rahul — Coach: S2, Seat: 7"));
+        Assert.That(sender.Messages.Single().Body, Does.Contain("Priya — Coach: S2, Seat: 8"));
+    }
+
+    [Test]
+    public async Task SendAsync_RendersCurrentWaitlistPosition()
+    {
+        var sender = new FakeSmtpMailSender();
+        var request = CreateRequest("BookingWaitlisted");
+
+        await CreateService(sender).SendAsync(request);
+
+        Assert.That(sender.Messages.Single().Body, Does.Contain("Current waitlist position: 2."));
+    }
+
     private static MailNotificationService CreateService(FakeSmtpMailSender sender) => new(sender, NullLogger<MailNotificationService>.Instance);
 
     private static SendMailRequest CreateRequest(string template) => new(
@@ -52,7 +84,9 @@ public class MailNotificationServiceTests
         new Dictionary<string, string>
         {
             ["pnr"] = "PNR123", ["trainNumber"] = "12001", ["journeyDate"] = "2026-10-15",
-            ["from"] = "Delhi", ["to"] = "Agra", ["coach"] = "S1", ["seat"] = "25"
+            ["from"] = "Delhi", ["to"] = "Agra",
+            ["passengerSeats"] = "Rahul — Coach: S1, Seat: 25",
+            ["waitlistPosition"] = "2"
         });
 
     private sealed class FakeSmtpMailSender : ISmtpMailSender

@@ -121,7 +121,7 @@ public class BookingService(
         var passengers = await bookingPassengerRepository.GetByBookingIdAsync(booking.Id);
         var wasConfirmed = booking.Status == BookingStatus.Confirmed;
 
-        await using (var transaction = await dbContext.BeginTransactionAsync())
+        await using (var transaction = await dbContext.BeginTransactionAsync(IsolationLevel.Serializable))
         {
             var now = DateTime.UtcNow;
             booking.Status = BookingStatus.Cancelled;
@@ -140,7 +140,11 @@ public class BookingService(
 
                 if (waitlistEntry is not null)
                 {
-                    await waitlistRepository.RemoveAsync(waitlistEntry);
+                    await waitlistRepository.RemoveAndRenumberAsync(
+                        waitlistEntry,
+                        booking.TrainId,
+                        booking.JourneyDate,
+                        booking.CoachType);
                 }
             }
 
@@ -169,7 +173,13 @@ public class BookingService(
 
         if (wasConfirmed)
         {
-            await PromoteEarliestWaitlistedBookingAsync();
+            while (await PromoteEarliestWaitlistedBookingAsync(
+                       booking.TrainId,
+                       booking.JourneyDate,
+                       booking.CoachType))
+            {
+                // Continue while the current first booking can be fully promoted.
+            }
         }
 
         return response;
@@ -192,6 +202,9 @@ public class BookingService(
 
         var passengers = await bookingPassengerRepository.GetByBookingIdAsync(booking.Id);
         var allocations = await seatAllocationRepository.GetByBookingIdAsync(booking.Id);
+        var waitlistPosition = booking.Status == BookingStatus.Waitlisted
+            ? (await waitlistRepository.GetByBookingIdAsync(booking.Id))?.Position
+            : null;
         var responses = passengers.Select(passenger =>
         {
             var allocation = allocations.FirstOrDefault(item => item.BookingPassengerId == passenger.Id);
@@ -212,15 +225,23 @@ public class BookingService(
             booking.CoachType,
             booking.Quota,
             booking.TotalFare,
-            responses);
+            responses,
+            waitlistPosition);
     }
 
-    public async Task<bool> PromoteEarliestWaitlistedBookingAsync()
+    public async Task<bool> PromoteEarliestWaitlistedBookingAsync(
+        int trainId,
+        DateTime journeyDate,
+        CoachType coachType
+    )
     {
         // SERIALIZABLE prevents two promotion requests from allocating the same released seat.
         await using var transaction = await dbContext.BeginTransactionAsync(IsolationLevel.Serializable);
 
-        var waitlistEntries = await waitlistRepository.GetAllOrderedByPositionAsync();
+        var waitlistEntries = await waitlistRepository.GetOrderedByQueueAsync(
+        trainId,
+        journeyDate.Date,
+        coachType);
         var earliestEntry = waitlistEntries.FirstOrDefault();
 
         if (earliestEntry is null)
@@ -274,10 +295,14 @@ public class BookingService(
         booking.Status = BookingStatus.Confirmed;
         booking.UpdatedAt = DateTime.UtcNow;
         await bookingRepository.UpdateAsync(booking);
-        await waitlistRepository.RemoveAsync(earliestEntry);
+        await waitlistRepository.RemoveAndRenumberAsync(
+            earliestEntry,
+            booking.TrainId,
+            booking.JourneyDate,
+            booking.CoachType);
         await transaction.CommitAsync();
 
-        await SendPromotionNotificationAsync(booking, passengers, availability.AvailableSeats);
+        await SendPromotionNotificationAsync(booking, passengers, allocations);
         return true;
     }
 
@@ -332,6 +357,8 @@ public class BookingService(
 
         var responsePassengers = new List<BookingPassengerResponse>();
 
+        int? waitlistPosition = null;
+
         if (confirmed)
         {
             var allocations = new List<SeatAllocation>();
@@ -362,10 +389,14 @@ public class BookingService(
             var waitlistEntry = new WaitlistEntry
             {
                 BookingId = booking.Id,
-                Position = await waitlistRepository.GetNextPositionAsync(),
+                Position = await waitlistRepository.GetNextPositionAsync(
+                    booking.TrainId,
+                    booking.JourneyDate,
+                    booking.CoachType),
                 CreatedAt = now
             };
             await waitlistRepository.AddAsync(waitlistEntry);
+            waitlistPosition = waitlistEntry.Position;
 
             responsePassengers.AddRange(passengers.Select(passenger => new BookingPassengerResponse(
                 passenger.Id,
@@ -376,7 +407,7 @@ public class BookingService(
 
         await transaction.CommitAsync();
 
-        return new BookingResponse(booking.Pnr, booking.Status, booking.TotalFare, responsePassengers);
+        return new BookingResponse(booking.Pnr, booking.Status, booking.TotalFare, responsePassengers, waitlistPosition);
     }
 
 
@@ -400,8 +431,11 @@ public class BookingService(
 
         if (response.Status == BookingStatus.Confirmed && response.Passengers.Count > 0)
         {
-            data["coach"] = response.Passengers[0].CoachNumber ?? string.Empty;
-            data["seat"] = response.Passengers[0].SeatNumber ?? string.Empty;
+            data["passengerSeats"] = BuildPassengerSeatLines(response.Passengers);
+        }
+        else if (response.Status == BookingStatus.Waitlisted)
+        {
+            data["waitlistPosition"] = response.WaitlistPosition?.ToString() ?? string.Empty;
         }
 
         try
@@ -443,7 +477,8 @@ public class BookingService(
                 passenger.Id,
                 passenger.Name,
                 null,
-                null)).ToList());
+                null)).ToList(),
+            null);
     }
 
     private async Task SendCancellationNotificationAsync(Booking booking, BookingResponse response)
@@ -501,7 +536,7 @@ public class BookingService(
     private async Task SendPromotionNotificationAsync(
         Booking booking,
         List<BookingPassenger> passengers,
-        List<AvailableSeat> availableSeats)
+        List<SeatAllocation> allocations)
     {
         try
         {
@@ -523,8 +558,7 @@ public class BookingService(
                 fromStop.StationName,
                 toStop.StationName);
 
-            data["coach"] = availableSeats[0].CoachNumber;
-            data["seat"] = availableSeats[0].SeatNumber;
+            data["passengerSeats"] = BuildPassengerSeatLines(passengers, allocations);
 
             await mailClient.SendAsync(user.Email, "WaitlistPromotion", data);
         }
@@ -548,6 +582,23 @@ public class BookingService(
             ["from"] = fromStationName,
             ["to"] = toStationName
         };
+    }
+
+    private static string BuildPassengerSeatLines(List<BookingPassengerResponse> passengers) =>
+        string.Join(Environment.NewLine, passengers.Select(passenger =>
+            $"{passenger.Name} — Coach: {passenger.CoachNumber}, Seat: {passenger.SeatNumber}"));
+
+    private static string BuildPassengerSeatLines(
+        List<BookingPassenger> passengers,
+        List<SeatAllocation> allocations)
+    {
+        var allocationsByPassengerId = allocations.ToDictionary(allocation => allocation.BookingPassengerId);
+
+        return string.Join(Environment.NewLine, passengers.Select(passenger =>
+        {
+            var allocation = allocationsByPassengerId[passenger.Id];
+            return $"{passenger.Name} — Coach: {allocation.CoachId}, Seat: {allocation.SeatId}";
+        }));
     }
 
     private async Task<string> GenerateUniquePnrAsync()
