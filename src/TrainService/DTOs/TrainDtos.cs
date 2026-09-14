@@ -4,7 +4,14 @@ namespace TrainService.DTOs;
 
 public record TrainDto(int Id, string TrainNumber, string Name);
 
+public record StationDto(
+    int Id,
+    string Code,
+    string Name
+);
+
 public record RouteStopDto(
+    int Id,
     int StopOrder,
     int StationId,
     string StationCode,
@@ -24,3 +31,5 @@ public record SeatInventoryDto(
     string CoachNumber,
     int SeatId,
     string SeatNumber);
+
+

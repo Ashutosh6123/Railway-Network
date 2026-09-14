@@ -7,11 +7,11 @@ public interface ITrainAdminService
     Task<TrainDto> CreateTrainAsync(TrainAdminRequest request);
     Task<TrainDto> UpdateTrainAsync(int trainId, TrainAdminRequest request);
     Task DeleteTrainAsync(int trainId);
-    Task CreateStationAsync(StationAdminRequest request);
-    Task UpdateStationAsync(int stationId, StationAdminRequest request);
+    Task<StationDto> CreateStationAsync(StationAdminRequest request);
+    Task<StationDto> UpdateStationAsync(int stationId, StationAdminRequest request);
     Task DeleteStationAsync(int stationId);
-    Task AddRouteStopAsync(RouteStopAdminRequest request);
-    Task UpdateRouteStopAsync(int routeStopId, RouteStopAdminRequest request);
+    Task<RouteStopDto> AddRouteStopAsync(RouteStopAdminRequest request);
+    Task<RouteStopDto> UpdateRouteStopAsync(int routeStopId, RouteStopAdminRequest request);
     Task DeleteRouteStopAsync(int routeStopId);
     Task<List<RouteStopDto>> GetRouteStopsAsync(int trainId);
     Task CreateCoachAsync(CoachAdminRequest request);

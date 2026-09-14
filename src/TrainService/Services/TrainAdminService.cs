@@ -39,15 +39,24 @@ public class TrainAdminService(
 
     public async Task DeleteTrainAsync(int trainId) => await trains.DeleteAsync(await TrainOrThrow(trainId));
 
-    public async Task CreateStationAsync(StationAdminRequest request)
+    public async Task<StationDto> CreateStationAsync(StationAdminRequest request)
     {
         Required(request.Code, "Station code");
         Required(request.Name, "Station name");
         if (await stations.GetByCodeAsync(request.Code) is not null) throw new InvalidOperationException("Station code already exists.");
-        await stations.AddAsync(new Station { Code = request.Code, Name = request.Name });
+
+        var station = new Station
+        {
+            Code = request.Code,
+            Name = request.Name
+        };
+
+        await stations.AddAsync(station);
+
+        return new(station.Id, station.Code, station.Name);
     }
 
-    public async Task UpdateStationAsync(int stationId, StationAdminRequest request)
+    public async Task<StationDto> UpdateStationAsync(int stationId, StationAdminRequest request)
     {
         Positive(stationId, nameof(stationId));
         Required(request.Code, "Station code");
@@ -58,23 +67,57 @@ public class TrainAdminService(
         station.Code = request.Code;
         station.Name = request.Name;
         await stations.UpdateAsync(station);
+
+        return new(station.Id, station.Code, station.Name);
     }
 
     public async Task DeleteStationAsync(int stationId) => await stations.DeleteAsync(await StationOrThrow(stationId));
 
-    public async Task AddRouteStopAsync(RouteStopAdminRequest request)
+    public async Task<RouteStopDto> AddRouteStopAsync(RouteStopAdminRequest request)
     {
         await ValidateRouteStopAsync(request, null);
-        await routeStops.AddAsync(new RouteStop { TrainId = request.TrainId, StationId = request.StationId, StopOrder = request.StopOrder, ArrivalTime = request.ArrivalTime, DepartureTime = request.DepartureTime });
+        var routeStop = new RouteStop
+        {
+            TrainId = request.TrainId,
+            StationId = request.StationId,
+            StopOrder = request.StopOrder,
+            ArrivalTime = request.ArrivalTime,
+            DepartureTime = request.DepartureTime
+        };
+        await routeStops.AddAsync(routeStop);
+
+        var station = await StationOrThrow(request.StationId);
+
+        return new (
+            routeStop.Id,
+            routeStop.StopOrder,
+            station.Id,
+            station.Code,
+            station.Name,
+            routeStop.ArrivalTime,
+            routeStop.DepartureTime
+        );
     }
 
-    public async Task UpdateRouteStopAsync(int routeStopId, RouteStopAdminRequest request)
+    public async Task<RouteStopDto> UpdateRouteStopAsync(int routeStopId, RouteStopAdminRequest request)
     {
         Positive(routeStopId, nameof(routeStopId));
         var routeStop = await routeStops.GetByIdAsync(routeStopId) ?? throw new InvalidOperationException("Route stop was not found.");
         await ValidateRouteStopAsync(request, routeStopId);
         routeStop.TrainId = request.TrainId; routeStop.StationId = request.StationId; routeStop.StopOrder = request.StopOrder; routeStop.ArrivalTime = request.ArrivalTime; routeStop.DepartureTime = request.DepartureTime;
         await routeStops.UpdateAsync(routeStop);
+
+        var station = await StationOrThrow(request.StationId);
+
+        return new (
+            routeStop.Id,
+            routeStop.StopOrder,
+            station.Id,
+            station.Code,
+            station.Name,
+            routeStop.ArrivalTime,
+            routeStop.DepartureTime
+        );
     }
 
     public async Task DeleteRouteStopAsync(int routeStopId)
@@ -91,7 +134,17 @@ public class TrainAdminService(
         foreach (var routeStop in await routeStops.GetByTrainIdAsync(trainId))
         {
             var station = await StationOrThrow(routeStop.StationId);
-            result.Add(new(routeStop.StopOrder, station.Id, station.Code, station.Name, routeStop.ArrivalTime, routeStop.DepartureTime));
+            result.Add(
+                new(
+                    routeStop.Id,
+                    routeStop.StopOrder,
+                    station.Id,
+                    station.Code,
+                    station.Name,
+                    routeStop.ArrivalTime,
+                    routeStop.DepartureTime
+                )
+            );
         }
         return result;
     }

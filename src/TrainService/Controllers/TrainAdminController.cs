@@ -29,17 +29,18 @@ public class TrainAdminController(ITrainAdminService trainAdminService) : Contro
     }
 
     [HttpPost("stations")]
-    public async Task<IActionResult> CreateStation(StationAdminRequest request)
+    [ProducesResponseType(typeof(StationDto), StatusCodes.Status201Created)]
+    public async Task<ActionResult<StationDto>> CreateStation(StationAdminRequest request)
     {
-        await trainAdminService.CreateStationAsync(request);
-        return StatusCode(StatusCodes.Status201Created);
+        var station = await trainAdminService.CreateStationAsync(request);
+        return StatusCode(StatusCodes.Status201Created, station);
     }
 
     [HttpPut("stations/{stationId:int}")]
-    public async Task<IActionResult> UpdateStation(int stationId, StationAdminRequest request)
+    public async Task<ActionResult<StationDto>> UpdateStation(int stationId, StationAdminRequest request)
     {
-        await trainAdminService.UpdateStationAsync(stationId, request);
-        return Ok();
+        var station = await trainAdminService.UpdateStationAsync(stationId, request);
+        return Ok(station);
     }
 
     [HttpDelete("stations/{stationId:int}")]
@@ -50,17 +51,23 @@ public class TrainAdminController(ITrainAdminService trainAdminService) : Contro
     }
 
     [HttpPost("trains/{trainId:int}/route-stops")]
-    public async Task<IActionResult> AddRouteStop(int trainId, RouteStopRequest request)
+    public async Task<ActionResult<RouteStopDto>> AddRouteStop(int trainId, RouteStopRequest request)
     {
-        await trainAdminService.AddRouteStopAsync(new(trainId, request.StationId, request.StopOrder, request.ArrivalTime, request.DepartureTime));
-        return StatusCode(StatusCodes.Status201Created);
+        var routeStop = await trainAdminService.AddRouteStopAsync(
+            new(trainId, request.StationId, request.StopOrder, request.ArrivalTime, request.DepartureTime)
+        );
+
+        return StatusCode(StatusCodes.Status201Created, routeStop);
     }
 
     [HttpPut("route-stops/{routeStopId:int}")]
-    public async Task<IActionResult> UpdateRouteStop(int routeStopId, RouteStopAdminRequest request)
+    public async Task<ActionResult<RouteStopDto>> UpdateRouteStop(int routeStopId, RouteStopAdminRequest request)
     {
-        await trainAdminService.UpdateRouteStopAsync(routeStopId, request);
-        return Ok();
+        var routeStop = await trainAdminService.UpdateRouteStopAsync(
+            routeStopId, request
+        );
+
+        return Ok(routeStop);
     }
 
     [HttpDelete("route-stops/{routeStopId:int}")]

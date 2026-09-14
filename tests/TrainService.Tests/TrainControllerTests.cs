@@ -38,6 +38,77 @@ public class TrainControllerTests
     }
 
     [Test]
+    public async Task GetRouteStops_ReturnsRouteStopsWithIds()
+    {
+        var controller = new TrainAdminController(new FakeTrainAdminService());
+
+        var result = await controller.GetRouteStops(1);
+
+        var okResult = result.Result as OkObjectResult;
+        var routeStops = okResult?.Value as List<RouteStopDto>;
+
+        Assert.That(okResult, Is.Not.Null);
+        Assert.That(routeStops, Is.Not.Null);
+        Assert.That(routeStops, Has.Count.EqualTo(2));
+
+        Assert.That(routeStops![0].Id, Is.EqualTo(10));
+        Assert.That(routeStops[1].Id, Is.EqualTo(11));
+    }
+
+    [Test]
+    public async Task AddRouteStop_ReturnsCreatedWithRouteStop()
+    {
+        var controller = new TrainAdminController(new FakeTrainAdminService());
+
+        var result = await controller.AddRouteStop(
+            1,
+            new RouteStopRequest(
+                2,
+                1,
+                TimeSpan.FromHours(7.5),
+                TimeSpan.FromHours(7.5) + TimeSpan.FromMinutes(5)));
+
+        var createdResult = result.Result as ObjectResult;
+        var routeStop = createdResult?.Value as RouteStopDto;
+
+        Assert.That(createdResult?.StatusCode,
+            Is.EqualTo(StatusCodes.Status201Created));
+
+        Assert.That(routeStop, Is.Not.Null);
+        Assert.That(routeStop!.Id, Is.EqualTo(10));
+        Assert.That(routeStop.StopOrder, Is.EqualTo(1));
+        Assert.That(routeStop.StationId, Is.EqualTo(2));
+        Assert.That(routeStop.StationCode, Is.EqualTo("BRV"));
+        Assert.That(routeStop.StationName, Is.EqualTo("Bravo Central"));
+    }
+
+    [Test]
+    public async Task UpdateRouteStop_ReturnsOkWithRouteStop()
+    {
+        var controller = new TrainAdminController(new FakeTrainAdminService());
+
+        var result = await controller.UpdateRouteStop(
+            10,
+            new RouteStopAdminRequest(
+                1,
+                2,
+                2,
+                TimeSpan.FromHours(9),
+                TimeSpan.FromHours(9) + TimeSpan.FromMinutes(5)));
+
+        var okResult = result.Result as OkObjectResult;
+        var routeStop = okResult?.Value as RouteStopDto;
+
+        Assert.That(okResult, Is.Not.Null);
+        Assert.That(routeStop, Is.Not.Null);
+        Assert.That(routeStop!.Id, Is.EqualTo(10));
+        Assert.That(routeStop.StopOrder, Is.EqualTo(2));
+        Assert.That(routeStop.StationId, Is.EqualTo(2));
+        Assert.That(routeStop.StationCode, Is.EqualTo("BRV"));
+        Assert.That(routeStop.StationName, Is.EqualTo("Bravo Central"));
+    }
+
+    [Test]
     public async Task GetRoute_ReturnsRouteStopsInStopOrder()
     {
         var controller = new TrainController(new FakeTrainService());
@@ -113,8 +184,8 @@ public class TrainControllerTests
         public Task<List<RouteStopDto>> GetRouteAsync(int trainId) =>
             Task.FromResult(new List<RouteStopDto>
             {
-                new(1, 1, "ALP", "Alpha Junction", TimeSpan.FromHours(6), TimeSpan.FromHours(6)),
-                new(2, 2, "BRV", "Bravo Central", TimeSpan.FromHours(7.5), TimeSpan.FromHours(7.5))
+                new(1, 1, 1, "ALP", "Alpha Junction", TimeSpan.FromHours(6), TimeSpan.FromHours(6)),
+                new(2, 2, 2, "BRV", "Bravo Central", TimeSpan.FromHours(7.5), TimeSpan.FromHours(7.5))
             });
 
         public Task<FareDto> GetFareAsync(int trainId, int fromStationId, int toStationId, CoachType coachType) =>
@@ -136,13 +207,105 @@ public class TrainControllerTests
 
         public Task<TrainDto> UpdateTrainAsync(int trainId, TrainAdminRequest request) => throw new NotImplementedException();
         public Task DeleteTrainAsync(int trainId) => throw new NotImplementedException();
-        public Task CreateStationAsync(StationAdminRequest request) => throw new NotImplementedException();
-        public Task UpdateStationAsync(int stationId, StationAdminRequest request) => throw new NotImplementedException();
+        public Task<StationDto> CreateStationAsync(StationAdminRequest request) =>
+            Task.FromResult(new StationDto(8, request.Code, request.Name));
+        
+        [Test]
+        public async Task CreateStation_ReturnsCreatedWithStation()
+        {
+            var controller = new TrainAdminController(new FakeTrainAdminService());
+
+            var result = await controller.CreateStation(
+                new StationAdminRequest("TST", "Test Station"));
+
+            var createdResult = result.Result as ObjectResult;
+            var station = createdResult?.Value as StationDto;
+
+            Assert.That(createdResult?.StatusCode,
+                Is.EqualTo(StatusCodes.Status201Created));
+
+            Assert.That(station, Is.Not.Null);
+            Assert.That(station!.Code, Is.EqualTo("TST"));
+            Assert.That(station.Name, Is.EqualTo("Test Station"));
+        }
+
+        [Test]
+        public async Task UpdateStation_ReturnsOkWithStation()
+        {
+            var controller = new TrainAdminController(new FakeTrainAdminService());
+
+            var result = await controller.UpdateStation(
+                8,
+                new StationAdminRequest("TST-UPD", "Updated Test Station"));
+
+            var okResult = result.Result as OkObjectResult;
+            var station = okResult?.Value as StationDto;
+
+            Assert.That(okResult, Is.Not.Null);
+            Assert.That(station, Is.Not.Null);
+            Assert.That(station!.Id, Is.EqualTo(8));
+            Assert.That(station.Code, Is.EqualTo("TST-UPD"));
+            Assert.That(station.Name, Is.EqualTo("Updated Test Station"));
+        }
+
+        public Task<StationDto> UpdateStationAsync(int stationId,StationAdminRequest request) =>
+            Task.FromResult(
+                new StationDto(
+                    stationId,
+                    request.Code,
+                    request.Name)
+            );
         public Task DeleteStationAsync(int stationId) => throw new NotImplementedException();
-        public Task AddRouteStopAsync(RouteStopAdminRequest request) => throw new NotImplementedException();
-        public Task UpdateRouteStopAsync(int routeStopId, RouteStopAdminRequest request) => throw new NotImplementedException();
+        public Task<RouteStopDto> AddRouteStopAsync(RouteStopAdminRequest request)
+        {
+            return Task.FromResult(
+                new RouteStopDto(
+                    10,
+                    request.StopOrder,
+                    request.StationId,
+                    "BRV",
+                    "Bravo Central",
+                    request.ArrivalTime,
+                    request.DepartureTime));
+        }
+        public Task<RouteStopDto> UpdateRouteStopAsync(
+            int routeStopId,
+            RouteStopAdminRequest request)
+        {
+            return Task.FromResult(
+                new RouteStopDto(
+                    routeStopId,
+                    request.StopOrder,
+                    request.StationId,
+                    "BRV",
+                    "Bravo Central",
+                    request.ArrivalTime,
+                    request.DepartureTime));
+        }
         public Task DeleteRouteStopAsync(int routeStopId) => throw new NotImplementedException();
-        public Task<List<RouteStopDto>> GetRouteStopsAsync(int trainId) => throw new NotImplementedException();
+        public Task<List<RouteStopDto>> GetRouteStopsAsync(int trainId)
+        {
+            return Task.FromResult(new List<RouteStopDto>
+            {
+                new RouteStopDto(
+                    10,
+                    1,
+                    1,
+                    "ALP",
+                    "Alpha Junction",
+                    TimeSpan.FromHours(6),
+                    TimeSpan.FromHours(6)),
+
+                new RouteStopDto(
+                    11,
+                    2,
+                    2,
+                    "BRV",
+                    "Bravo Central",
+                    TimeSpan.FromHours(7.5),
+                    TimeSpan.FromHours(7.5) + TimeSpan.FromMinutes(5))
+            });
+        }
         public Task CreateCoachAsync(CoachAdminRequest request) => throw new NotImplementedException();
         public Task UpdateCoachAsync(int coachId, CoachAdminRequest request) => throw new NotImplementedException();
         public Task DeleteCoachAsync(int coachId) => throw new NotImplementedException();

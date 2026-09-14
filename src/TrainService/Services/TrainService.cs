@@ -63,6 +63,7 @@ public class TrainService(
             }
 
             route.Add(new RouteStopDto(
+                routeStop.Id,
                 routeStop.StopOrder,
                 station.Id,
                 station.Code,
