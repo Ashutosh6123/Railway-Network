@@ -64,6 +64,42 @@ public class CancellationAndWaitlistServiceTests
             "Rahul — Coach: S1, Seat: 1" + Environment.NewLine +
             "Priya — Coach: S1, Seat: 2"));
     }
+        
+    [Test]
+    public async Task CreateBookingAsync_DoesNotBypassExistingWaitlistWhenSeatsAreAvailable()
+    {
+        var first = CreateBooking(BookingStatus.Waitlisted, pnr: "FIRST", id: 1);
+
+        var fixture = CreateFixture(
+            first,
+            entries: [
+                new WaitlistEntry { BookingId = first.Id, Position = 1 }
+            ],
+            passengers: Enumerable.Range(1, 5)
+                .Select(id => CreatePassenger(first.Id, id))
+                .ToList(),
+            availableSeats: [CreateSeat(1), CreateSeat(2)]);
+
+        var request = new BookingRequest(
+            20,
+            1,
+            2,
+            first.JourneyDate,
+            CoachType.Sleeper,
+            QuotaType.General,
+            [
+                new BookingPassengerRequest("Passenger A", 30, Gender.Male, "Delhi"),
+                new BookingPassengerRequest("Passenger B", 28, Gender.Female, "Delhi")
+            ]);
+
+        var result = await fixture.Service.CreateBookingAsync(first.UserId, request);
+
+        Assert.That(result.Status, Is.EqualTo(BookingStatus.Waitlisted));
+        Assert.That(result.WaitlistPosition, Is.EqualTo(2));
+        Assert.That(
+            fixture.WaitlistRepository.Entries.Select(entry => entry.Position),
+            Is.EqualTo(new[] { 1, 2 }));
+    }
 
     [Test]
     public async Task GetReservationAsync_ReturnsStoredWaitlistPositionForWaitlistedBooking()
@@ -132,9 +168,22 @@ public class CancellationAndWaitlistServiceTests
                 new WaitlistEntry { BookingId = first.Id, Position = 1 },
                 new WaitlistEntry { BookingId = second.Id, Position = 2 },
                 new WaitlistEntry { BookingId = otherQueue.Id, Position = 1 }
-            ]);
+            ],
+            passengers:
+            [
+                CreatePassenger(first.Id, 1),
+                CreatePassenger(second.Id, 2),
+                CreatePassenger(otherQueue.Id, 3)
+            ],
+            availableSeats: []);
 
         await fixture.Service.CancelBookingAsync(first.UserId, first.Pnr);
+
+        Console.WriteLine(
+            $"Remaining entries: {string.Join(", ", fixture.WaitlistRepository.Entries.Select(e => $"BookingId={e.BookingId}, Position={e.Position}"))}");
+
+        Console.WriteLine(
+            $"Second booking: Id={second.Id}, Status={second.Status}, Date={second.JourneyDate:O}, Train={second.TrainId}, Coach={second.CoachType}");
 
         Assert.That(fixture.WaitlistRepository.Entries.Single(entry => entry.BookingId == second.Id).Position, Is.EqualTo(1));
         Assert.That(fixture.WaitlistRepository.Entries.Single(entry => entry.BookingId == otherQueue.Id).Position, Is.EqualTo(1));
@@ -154,7 +203,8 @@ public class CancellationAndWaitlistServiceTests
                 new WaitlistEntry { BookingId = first.Id, Position = 1 },
                 new WaitlistEntry { BookingId = middle.Id, Position = 2 },
                 new WaitlistEntry { BookingId = last.Id, Position = 3 }
-            ]);
+            ],
+            availableSeats: []);
 
         await fixture.Service.CancelBookingAsync(middle.UserId, middle.Pnr);
         var reservation = await fixture.Service.GetReservationAsync(last.UserId, last.Pnr);
@@ -248,6 +298,43 @@ public class CancellationAndWaitlistServiceTests
         await fixture.Service.CancelBookingAsync(booking.UserId, booking.Pnr);
 
         Assert.That(booking.Status, Is.EqualTo(BookingStatus.Cancelled));
+    }
+
+    [Test]
+    public async Task CancelBookingAsync_CancellingFirstWaitlistedBookingPromotesNextBookingWhenSeatsAreAvailable()
+    {
+        var first = CreateBooking(BookingStatus.Waitlisted, pnr: "FIRST", id: 1);
+        var second = CreateBooking(BookingStatus.Waitlisted, pnr: "SECOND", id: 2);
+
+        var fixture = CreateFixture(
+            first,
+            bookings: [first, second],
+            entries: [
+                new WaitlistEntry { BookingId = first.Id, Position = 1 },
+                new WaitlistEntry { BookingId = second.Id, Position = 2 }
+            ],
+            passengers:
+            [
+                .. Enumerable.Range(1, 5)
+                    .Select(id => CreatePassenger(first.Id, id)),
+                .. Enumerable.Range(6, 2)
+                    .Select(id => CreatePassenger(second.Id, id))
+            ],
+            availableSeats: [
+                CreateSeat(1),
+                CreateSeat(2),
+                CreateSeat(3),
+                CreateSeat(4)
+            ]);
+
+        await fixture.Service.CancelBookingAsync(first.UserId, first.Pnr);
+
+        Assert.That(first.Status, Is.EqualTo(BookingStatus.Cancelled));
+        Assert.That(second.Status, Is.EqualTo(BookingStatus.Confirmed));
+        Assert.That(fixture.WaitlistRepository.Entries, Is.Empty);
+        Assert.That(fixture.SeatAllocationRepository.Allocations, Has.Count.EqualTo(2));
+        Assert.That(fixture.PaymentClient.ProcessRequests, Is.Empty);
+        Assert.That(fixture.MailClient.Templates, Does.Contain("WaitlistPromotion"));
     }
 
     [Test]

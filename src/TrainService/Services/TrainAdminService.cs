@@ -246,21 +246,45 @@ public class TrainAdminService(
 
     private async Task ValidateFareAsync(FareAdminRequest request, int? ignoredId)
     {
-        Positive(request.TrainId, nameof(request.TrainId)); Positive(request.FromStationId, nameof(request.FromStationId)); Positive(request.ToStationId, nameof(request.ToStationId));
+        Positive(request.TrainId, nameof(request.TrainId)); 
+        Positive(request.FromStationId, nameof(request.FromStationId)); 
+        Positive(request.ToStationId, nameof(request.ToStationId));
+
         if (request.FromStationId == request.ToStationId) throw new ArgumentException("Origin and destination stations must be different.");
+
         if (!Enum.IsDefined(request.CoachType)) throw new ArgumentException("Coach type is invalid.");
+
         if (request.Amount <= 0) throw new ArgumentException("Fare amount must be greater than zero.");
-        await TrainOrThrow(request.TrainId); await StationOrThrow(request.FromStationId); await StationOrThrow(request.ToStationId);
+
+        await TrainOrThrow(request.TrainId); await StationOrThrow(request.FromStationId); 
+        await StationOrThrow(request.ToStationId);
+
         var stops = await routeStops.GetByTrainIdAsync(request.TrainId);
         var from = stops.FirstOrDefault(stop => stop.StationId == request.FromStationId);
         var to = stops.FirstOrDefault(stop => stop.StationId == request.ToStationId);
+
         if (from is null || to is null || from.StopOrder >= to.StopOrder) throw new ArgumentException("Fare stations must be an ordered segment on the train route.");
+
         var existingFare = await fares.GetFareAsync(request.TrainId, request.FromStationId, request.ToStationId, request.CoachType);
+
         if (existingFare is not null && existingFare.Id != ignoredId) throw new InvalidOperationException("Fare already exists for this route and coach type.");
     }
 
-    private async Task<Train> TrainOrThrow(int id) { Positive(id, nameof(id)); return await trains.GetByIdAsync(id) ?? throw new InvalidOperationException("Train was not found."); }
-    private async Task<Station> StationOrThrow(int id) { Positive(id, nameof(id)); return await stations.GetByIdAsync(id) ?? throw new InvalidOperationException("Station was not found."); }
-    private static void Positive(int id, string name) { if (id <= 0) throw new ArgumentException("ID must be positive.", name); }
-    private static void Required(string value, string name) { if (string.IsNullOrWhiteSpace(value)) throw new ArgumentException($"{name} is required."); }
+    private async Task<Train> TrainOrThrow(int id) { 
+        Positive(id, nameof(id)); 
+        return await trains.GetByIdAsync(id) ?? throw new InvalidOperationException("Train was not found."); 
+    }
+
+    private async Task<Station> StationOrThrow(int id) { 
+        Positive(id, nameof(id)); 
+        return await stations.GetByIdAsync(id) ?? throw new InvalidOperationException("Station was not found."); 
+    }
+
+    private static void Positive(int id, string name) { 
+        if (id <= 0) throw new ArgumentException("ID must be positive.", name); 
+    }
+
+    private static void Required(string value, string name) { 
+        if (string.IsNullOrWhiteSpace(value)) throw new ArgumentException($"{name} is required."); 
+    }
 }

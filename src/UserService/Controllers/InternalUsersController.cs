@@ -11,7 +11,8 @@ public class InternalUsersController(IUserService userService, IConfiguration co
     [HttpGet("{userId:int}")]
     public async Task<ActionResult<UserDto>> GetUser(
         int userId,
-        [FromHeader(Name = "X-Internal-Service-Key")] string? internalServiceKey)
+        [FromHeader(Name = "X-Internal-Service-Key")] string? internalServiceKey
+    )
     {
         if (!HasValidInternalServiceKey(internalServiceKey))
         {

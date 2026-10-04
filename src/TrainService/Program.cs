@@ -39,6 +39,7 @@ builder.Services.AddSwaggerGen(options =>
     });
     options.OperationFilter<AuthorizeOperationFilter>();
 });
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -53,15 +54,19 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateLifetime = true
         };
     });
+    
 builder.Services.AddAuthorization();
+
 builder.Services.AddDbContext<TrainService.Data.TrainDbContext>(options =>
     options.UseSqlServer(trainDbConnectionString));
+
 builder.Services.AddScoped<TrainService.Repositories.ITrainRepository, TrainService.Repositories.TrainRepository>();
 builder.Services.AddScoped<TrainService.Repositories.IStationRepository, TrainService.Repositories.StationRepository>();
 builder.Services.AddScoped<TrainService.Repositories.IRouteStopRepository, TrainService.Repositories.RouteStopRepository>();
 builder.Services.AddScoped<TrainService.Repositories.ICoachRepository, TrainService.Repositories.CoachRepository>();
 builder.Services.AddScoped<TrainService.Repositories.ISeatRepository, TrainService.Repositories.SeatRepository>();
 builder.Services.AddScoped<TrainService.Repositories.IFareRepository, TrainService.Repositories.FareRepository>();
+
 builder.Services.AddScoped<TrainService.Services.ITrainService, TrainService.Services.TrainService>();
 builder.Services.AddScoped<TrainService.Services.ITrainAdminService, TrainService.Services.TrainAdminService>();
 

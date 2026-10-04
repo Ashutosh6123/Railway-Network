@@ -171,15 +171,13 @@ public class BookingService(
         var response = CreateCancelledResponse(booking, passengers);
         await SendCancellationNotificationAsync(booking, response);
 
-        if (wasConfirmed)
+        // Promote the earliest waitlisted booking if it can be fully promoted.
+        while (await PromoteEarliestWaitlistedBookingAsync(
+                booking.TrainId,
+                booking.JourneyDate,
+                booking.CoachType))
         {
-            while (await PromoteEarliestWaitlistedBookingAsync(
-                       booking.TrainId,
-                       booking.JourneyDate,
-                       booking.CoachType))
-            {
-                // Continue while the current first booking can be fully promoted.
-            }
+            // Continue while the current first booking can be fully promoted.
         }
 
         return response;
@@ -323,7 +321,17 @@ public class BookingService(
             request.ToStationId,
             request.JourneyDate.Date,
             request.CoachType);
-        var confirmed = initiallyConfirmed && finalAvailability.AvailableSeats.Count >= request.Passengers.Count;
+
+        // Preserve FIFO: a new booking cannot bypass an existing waitlist.
+        var existingWaitlist = await waitlistRepository.GetOrderedByQueueAsync(
+            request.TrainId,
+            request.JourneyDate.Date,
+            request.CoachType);
+
+        var confirmed =
+            initiallyConfirmed &&
+            existingWaitlist.Count == 0 &&
+            finalAvailability.AvailableSeats.Count >= request.Passengers.Count;
 
         // If seats disappeared after payment, the paid booking is safely stored as waitlisted.
         // This avoids a second charge and never creates a partial confirmed booking.

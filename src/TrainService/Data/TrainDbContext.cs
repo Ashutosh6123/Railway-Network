@@ -37,8 +37,14 @@ public class TrainDbContext(DbContextOptions<TrainDbContext> options) : DbContex
             entity.Property(routeStop => routeStop.StopOrder).IsRequired();
             entity.Property(routeStop => routeStop.ArrivalTime).IsRequired();
             entity.Property(routeStop => routeStop.DepartureTime).IsRequired();
-            entity.HasOne<Train>().WithMany().HasForeignKey(routeStop => routeStop.TrainId).OnDelete(DeleteBehavior.Restrict);
-            entity.HasOne<Station>().WithMany().HasForeignKey(routeStop => routeStop.StationId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<Train>()
+                .WithMany()
+                .HasForeignKey(routeStop => routeStop.TrainId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<Station>()
+                .WithMany()
+                .HasForeignKey(routeStop => routeStop.StationId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<Coach>(entity =>
@@ -46,14 +52,20 @@ public class TrainDbContext(DbContextOptions<TrainDbContext> options) : DbContex
             entity.HasKey(coach => coach.Id);
             entity.Property(coach => coach.CoachNumber).IsRequired().HasMaxLength(50);
             entity.Property(coach => coach.CoachType).IsRequired();
-            entity.HasOne<Train>().WithMany().HasForeignKey(coach => coach.TrainId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<Train>()
+            .WithMany()
+            .HasForeignKey(coach => coach.TrainId)
+            .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<Seat>(entity =>
         {
             entity.HasKey(seat => seat.Id);
             entity.Property(seat => seat.SeatNumber).IsRequired().HasMaxLength(50);
-            entity.HasOne<Coach>().WithMany().HasForeignKey(seat => seat.CoachId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<Coach>()
+                .WithMany()
+                .HasForeignKey(seat => seat.CoachId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<Fare>(entity =>

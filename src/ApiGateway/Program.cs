@@ -162,24 +162,64 @@ var admin = app.MapGroup("/api/admin")
     .WithTags("Administration")
     .RequireAuthorization(new AuthorizeAttribute { Roles = "Administrator" });
 
-admin.MapPost("/trains", (HttpContext context, TrainAdminRequest request, GatewayProxy proxy) => proxy.ForwardJsonAsync(context, "TrainService", request)).Produces<TrainResponse>(StatusCodes.Status201Created);
-admin.MapPut("/trains/{trainId:int}", (HttpContext context, int trainId, TrainAdminRequest request, GatewayProxy proxy) => proxy.ForwardJsonAsync(context, "TrainService", request)).Produces<TrainResponse>();
-admin.MapDelete("/trains/{trainId:int}", (HttpContext context, int trainId, GatewayProxy proxy) => proxy.ForwardAsync(context, "TrainService")).Produces(StatusCodes.Status204NoContent);
-admin.MapPost("/stations", (HttpContext context, StationAdminRequest request, GatewayProxy proxy) => proxy.ForwardJsonAsync(context, "TrainService", request)).Produces(StatusCodes.Status201Created);
-admin.MapPut("/stations/{stationId:int}", (HttpContext context, int stationId, StationAdminRequest request, GatewayProxy proxy) => proxy.ForwardJsonAsync(context, "TrainService", request));
-admin.MapDelete("/stations/{stationId:int}", (HttpContext context, int stationId, GatewayProxy proxy) => proxy.ForwardAsync(context, "TrainService")).Produces(StatusCodes.Status204NoContent);
+admin.MapPost("/trains", (HttpContext context, TrainAdminRequest request, GatewayProxy proxy) => 
+    proxy.ForwardJsonAsync(context, "TrainService", request))
+    .Produces<TrainResponse>(StatusCodes.Status201Created);
+
+admin.MapPut(
+    "/trains/{trainId:int}", 
+    (HttpContext context, int trainId, TrainAdminRequest request, GatewayProxy proxy) => 
+        proxy.ForwardJsonAsync(context, "TrainService", request)
+).Produces<TrainResponse>();
+
+admin.MapDelete(
+    "/trains/{trainId:int}", 
+    (HttpContext context, int trainId, GatewayProxy proxy) => 
+        proxy.ForwardAsync(context, "TrainService")
+).Produces(StatusCodes.Status204NoContent);
+
+admin.MapPost(
+    "/stations", 
+    (HttpContext context, StationAdminRequest request, GatewayProxy proxy) => 
+    proxy.ForwardJsonAsync(context, "TrainService", request)
+).Produces(StatusCodes.Status201Created);
+
+admin.MapPut(
+    "/stations/{stationId:int}", 
+    (HttpContext context, int stationId, StationAdminRequest request, GatewayProxy proxy) => 
+    proxy.ForwardJsonAsync(context, "TrainService", request)
+);
+
+admin.MapDelete(
+    "/stations/{stationId:int}", 
+    (HttpContext context, int stationId, GatewayProxy proxy) => 
+        proxy.ForwardAsync(context, "TrainService")
+).Produces(StatusCodes.Status204NoContent);
+
 admin.MapPost("/trains/{trainId:int}/route-stops", (HttpContext context, int trainId, RouteStopRequest request, GatewayProxy proxy) => proxy.ForwardJsonAsync(context, "TrainService", request)).Produces(StatusCodes.Status201Created);
+
 admin.MapPut("/route-stops/{routeStopId:int}", (HttpContext context, int routeStopId, RouteStopAdminRequest request, GatewayProxy proxy) => proxy.ForwardJsonAsync(context, "TrainService", request));
+
 admin.MapDelete("/route-stops/{routeStopId:int}", (HttpContext context, int routeStopId, GatewayProxy proxy) => proxy.ForwardAsync(context, "TrainService")).Produces(StatusCodes.Status204NoContent);
+
 admin.MapGet("/trains/{trainId:int}/route-stops", (HttpContext context, int trainId, GatewayProxy proxy) => proxy.ForwardAsync(context, "TrainService")).Produces<List<RouteStopResponse>>();
+
 admin.MapPost("/trains/{trainId:int}/coaches", (HttpContext context, int trainId, CoachRequest request, GatewayProxy proxy) => proxy.ForwardJsonAsync(context, "TrainService", request)).Produces(StatusCodes.Status201Created);
+
 admin.MapPut("/coaches/{coachId:int}", (HttpContext context, int coachId, CoachAdminRequest request, GatewayProxy proxy) => proxy.ForwardJsonAsync(context, "TrainService", request));
+
 admin.MapDelete("/coaches/{coachId:int}", (HttpContext context, int coachId, GatewayProxy proxy) => proxy.ForwardAsync(context, "TrainService")).Produces(StatusCodes.Status204NoContent);
+
 admin.MapPost("/coaches/{coachId:int}/seats", (HttpContext context, int coachId, SeatRequest request, GatewayProxy proxy) => proxy.ForwardJsonAsync(context, "TrainService", request)).Produces(StatusCodes.Status201Created);
+
 admin.MapPut("/seats/{seatId:int}", (HttpContext context, int seatId, SeatAdminRequest request, GatewayProxy proxy) => proxy.ForwardJsonAsync(context, "TrainService", request));
+
 admin.MapDelete("/seats/{seatId:int}", (HttpContext context, int seatId, GatewayProxy proxy) => proxy.ForwardAsync(context, "TrainService")).Produces(StatusCodes.Status204NoContent);
+
 admin.MapPost("/fares", (HttpContext context, FareAdminRequest request, GatewayProxy proxy) => proxy.ForwardJsonAsync(context, "TrainService", request)).Produces(StatusCodes.Status201Created);
+
 admin.MapPut("/fares/{fareId:int}", (HttpContext context, int fareId, FareAdminRequest request, GatewayProxy proxy) => proxy.ForwardJsonAsync(context, "TrainService", request));
+
 admin.MapDelete("/fares/{fareId:int}", (HttpContext context, int fareId, GatewayProxy proxy) => proxy.ForwardAsync(context, "TrainService")).Produces(StatusCodes.Status204NoContent);
 
 app.Run();
