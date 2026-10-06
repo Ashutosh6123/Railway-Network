@@ -52,6 +52,27 @@ public class ReservationController(
         }
     }
 
+    [HttpGet("~/api/pnr/{pnr}")]
+    [AllowAnonymous]
+    public async Task<ActionResult<PnrStatusResponse>> GetPnrStatus(string pnr)
+    {
+        if (string.IsNullOrWhiteSpace(pnr))
+            return BadRequest("PNR is required.");
+
+        try
+        {
+            return Ok(await bookingService.GetPnrStatusAsync(pnr));
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+        catch (ArgumentException exception)
+        {
+            return BadRequest(exception.Message);
+        }
+    }
+
     [HttpGet("{pnr}")]
     [Authorize]
     public async Task<ActionResult<ReservationDetailsResponse>> GetByPnr(string pnr)

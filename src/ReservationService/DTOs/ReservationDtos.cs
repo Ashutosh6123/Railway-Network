@@ -43,6 +43,11 @@ public record ReservationDetailsResponse(
     List<BookingPassengerResponse> Passengers,
     int? WaitlistPosition);
 
+public record PnrStatusResponse(
+    string Pnr,
+    BookingStatus Status,
+    DateTime JourneyDate);
+
 public record AvailabilityRequest(
     int TrainId,
     int FromStationId,

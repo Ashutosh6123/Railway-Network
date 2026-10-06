@@ -13,5 +13,7 @@ public interface IBookingService
 
     Task<List<ReservationDetailsResponse>> GetMyReservationsAsync(int userId);
 
+    Task<PnrStatusResponse> GetPnrStatusAsync(string pnr);
+
     Task<bool> PromoteEarliestWaitlistedBookingAsync(int trainId, DateTime journeyDate, CoachType coachType);
 }

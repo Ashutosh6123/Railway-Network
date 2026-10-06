@@ -279,6 +279,22 @@ public class BookingService(
         return reservations;
     }
 
+    public async Task<PnrStatusResponse> GetPnrStatusAsync(string pnr)
+    {
+        if (string.IsNullOrWhiteSpace(pnr))
+        {
+            throw new ArgumentException("PNR is required.");
+        }
+
+        var booking = await bookingRepository.GetByPnrAsync(pnr)
+            ?? throw new KeyNotFoundException("Booking was not found.");
+
+        return new PnrStatusResponse(
+            booking.Pnr,
+            booking.Status,
+            booking.JourneyDate);
+    }
+
     public async Task<bool> PromoteEarliestWaitlistedBookingAsync(
         int trainId,
         DateTime journeyDate,

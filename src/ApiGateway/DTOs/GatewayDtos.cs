@@ -67,14 +67,34 @@ public record ReservationResponse(
     decimal TotalFare,
     List<BookingPassengerResponse> Passengers,
     int? WaitlistPosition);
+
+public record PnrStatusResponse(
+    string Pnr,
+    BookingStatus Status,
+    DateTime JourneyDate);
+
 public record AvailabilityResponse(int AvailableSeats);
 
 public record TrainAdminRequest(string TrainNumber, string Name);
 public record StationAdminRequest(string Code, string Name);
-public record RouteStopRequest(int StationId, int StopOrder, TimeSpan ArrivalTime, TimeSpan DepartureTime);
-public record RouteStopAdminRequest(int TrainId, int StationId, int StopOrder, TimeSpan ArrivalTime, TimeSpan DepartureTime);
+public record RouteStopRequest(
+    int StationId, 
+    int StopOrder, 
+    TimeSpan ArrivalTime, 
+    TimeSpan DepartureTime);
+public record RouteStopAdminRequest(
+    int TrainId, 
+    int StationId, 
+    int StopOrder, 
+    TimeSpan ArrivalTime, 
+    TimeSpan DepartureTime);
 public record CoachRequest(string CoachNumber, CoachType CoachType);
 public record CoachAdminRequest(int TrainId, string CoachNumber, CoachType CoachType);
 public record SeatRequest(string SeatNumber);
 public record SeatAdminRequest(int CoachId, string SeatNumber);
-public record FareAdminRequest(int TrainId, int FromStationId, int ToStationId, CoachType CoachType, decimal Amount);
+public record FareAdminRequest(
+    int TrainId, 
+    int FromStationId, 
+    int ToStationId, 
+    CoachType CoachType, 
+    decimal Amount);

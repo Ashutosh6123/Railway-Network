@@ -174,6 +174,17 @@ app.MapGet("/api/reservations/my", (
     .Produces<List<ReservationResponse>>()
     .Produces(StatusCodes.Status401Unauthorized);
 
+app.MapGet("/api/pnr/{pnr}", (
+        HttpContext context,
+        string pnr,
+        GatewayProxy proxy) =>
+        proxy.ForwardAsync(context, "ReservationService"))
+    .WithTags("PNR")
+    .AllowAnonymous()
+    .Produces<PnrStatusResponse>()
+    .Produces(StatusCodes.Status400BadRequest)
+    .Produces(StatusCodes.Status404NotFound);
+
 app.MapGet("/api/reservations/{pnr}", (HttpContext context, string pnr, GatewayProxy proxy) =>
         proxy.ForwardAsync(context, "ReservationService"))
     .WithTags("Reservations")
