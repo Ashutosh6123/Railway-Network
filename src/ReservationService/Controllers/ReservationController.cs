@@ -35,6 +35,23 @@ public class ReservationController(
         }
     }
 
+    [HttpGet("my")]
+    [Authorize]
+    public async Task<ActionResult<List<ReservationDetailsResponse>>> GetMyReservations()
+    {
+        if (!TryGetAuthenticatedUserId(out var userId))
+            return Unauthorized();
+
+        try
+        {
+            return Ok(await bookingService.GetMyReservationsAsync(userId));
+        }
+        catch (ArgumentException exception)
+        {
+            return BadRequest(exception.Message);
+        }
+    }
+
     [HttpGet("{pnr}")]
     [Authorize]
     public async Task<ActionResult<ReservationDetailsResponse>> GetByPnr(string pnr)

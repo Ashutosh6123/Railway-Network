@@ -72,6 +72,23 @@ builder.Services.AddSwaggerGen(options =>
     options.SchemaFilter<CoachTypeSchemaFilter>();
 });
 
+var allowedOrigins =
+    builder.Configuration
+        .GetSection("Cors:AllowedOrigins")
+        .Get<string[]>() ?? Array.Empty<string>();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AngularFrontend", policy =>
+    {
+        policy
+            .WithOrigins(allowedOrigins)
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
+
+
 var app = builder.Build();
 
 app.UseSwagger();
@@ -79,6 +96,7 @@ app.UseSwaggerUI();
 
 app.UseMiddleware<ApiGateway.Middleware.GlobalExceptionMiddleware>();
 app.UseHttpsRedirection();
+app.UseCors("AngularFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -117,6 +135,14 @@ app.MapGet("/api/trains/{trainId:int}/fare", (HttpContext context, int trainId, 
     .WithTags("Trains")
     .Produces<FareResponse>();
 
+// Public station lookup
+app.MapGet("/api/stations", (
+        HttpContext context,
+        string? search,
+        GatewayProxy proxy) =>
+        proxy.ForwardAsync(context, "TrainService"))
+    .WithTags("Stations");
+
 // Public reservation availability
 app.MapGet("/api/reservations/availability", (
         HttpContext context,
@@ -137,6 +163,15 @@ app.MapPost("/api/reservations", (HttpContext context, BookingRequest request, G
     .RequireAuthorization(new AuthorizeAttribute { Roles = "Passenger" })
     .Produces<BookingResponse>()
     .Produces(StatusCodes.Status400BadRequest)
+    .Produces(StatusCodes.Status401Unauthorized);
+
+app.MapGet("/api/reservations/my", (
+        HttpContext context,
+        GatewayProxy proxy) =>
+        proxy.ForwardAsync(context, "ReservationService"))
+    .WithTags("Reservations")
+    .RequireAuthorization(new AuthorizeAttribute { Roles = "Passenger" })
+    .Produces<List<ReservationResponse>>()
     .Produces(StatusCodes.Status401Unauthorized);
 
 app.MapGet("/api/reservations/{pnr}", (HttpContext context, string pnr, GatewayProxy proxy) =>

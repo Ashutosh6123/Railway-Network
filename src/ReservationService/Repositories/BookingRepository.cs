@@ -20,6 +20,15 @@ public class BookingRepository(ReservationDbContext dbContext) : IBookingReposit
             .FirstOrDefaultAsync(booking => booking.Pnr == pnr);
     }
 
+    public Task<List<Booking>> GetByUserIdAsync(int userId)
+    {
+        return dbContext.Bookings
+            .AsNoTracking()
+            .Where(booking => booking.UserId == userId)
+            .OrderByDescending(booking => booking.JourneyDate)
+            .ToListAsync();
+    }
+
     public async Task AddAsync(Booking booking)
     {
         dbContext.Bookings.Add(booking);

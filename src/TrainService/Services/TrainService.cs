@@ -127,6 +127,33 @@ public class TrainService(
         return seats;
     }
 
+    public async Task<List<StationDto>> GetStationsAsync(string? searchTerm)
+    {
+        var stations = await stationRepository.GetAllAsync();
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            searchTerm = searchTerm.Trim();
+
+            stations = stations
+                .Where(station =>
+                    station.Name.Contains(
+                        searchTerm,
+                        StringComparison.OrdinalIgnoreCase) ||
+                    station.Code.Contains(
+                        searchTerm,
+                        StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
+        return stations
+            .Select(station => new StationDto(
+                station.Id,
+                station.Code,
+                station.Name))
+            .ToList();
+    }
+
     private static TrainDto MapTrain(Entities.Train train) =>
         new(train.Id, train.TrainNumber, train.Name);
 

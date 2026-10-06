@@ -227,6 +227,58 @@ public class BookingService(
             waitlistPosition);
     }
 
+    public async Task<List<ReservationDetailsResponse>> GetMyReservationsAsync(int userId)
+    {
+        if (userId <= 0)
+        {
+            throw new ArgumentException("User ID must be positive.");
+        }
+
+        var bookings = await bookingRepository.GetByUserIdAsync(userId);
+
+        var reservations = new List<ReservationDetailsResponse>();
+
+        foreach (var booking in bookings)
+        {
+            var passengers = await bookingPassengerRepository
+                .GetByBookingIdAsync(booking.Id);
+
+            var allocations = await seatAllocationRepository
+                .GetByBookingIdAsync(booking.Id);
+
+            var waitlistPosition = booking.Status == BookingStatus.Waitlisted
+                ? (await waitlistRepository.GetByBookingIdAsync(booking.Id))?.Position
+                : null;
+
+            var responses = passengers.Select(passenger =>
+            {
+                var allocation = allocations
+                    .FirstOrDefault(item => item.BookingPassengerId == passenger.Id);
+
+                return new BookingPassengerResponse(
+                    passenger.Id,
+                    passenger.Name,
+                    allocation?.CoachId.ToString(),
+                    allocation?.SeatId.ToString());
+            }).ToList();
+
+            reservations.Add(new ReservationDetailsResponse(
+                booking.Pnr,
+                booking.Status,
+                booking.TrainId,
+                booking.FromStationId,
+                booking.ToStationId,
+                booking.JourneyDate,
+                booking.CoachType,
+                booking.Quota,
+                booking.TotalFare,
+                responses,
+                waitlistPosition));
+        }
+
+        return reservations;
+    }
+
     public async Task<bool> PromoteEarliestWaitlistedBookingAsync(
         int trainId,
         DateTime journeyDate,

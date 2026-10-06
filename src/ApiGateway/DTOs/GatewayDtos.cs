@@ -49,7 +49,12 @@ public record BookingRequest(
     QuotaType Quota,
     List<BookingPassengerRequest> Passengers);
 public record BookingPassengerResponse(int BookingPassengerId, string Name, string? CoachNumber, string? SeatNumber);
-public record BookingResponse(string Pnr, BookingStatus Status, decimal TotalFare, List<BookingPassengerResponse> Passengers);
+public record BookingResponse(
+    string Pnr,
+    BookingStatus Status,
+    decimal TotalFare,
+    List<BookingPassengerResponse> Passengers,
+    int? WaitlistPosition);
 public record ReservationResponse(
     string Pnr,
     BookingStatus Status,
@@ -60,7 +65,8 @@ public record ReservationResponse(
     CoachType CoachType,
     QuotaType Quota,
     decimal TotalFare,
-    List<BookingPassengerResponse> Passengers);
+    List<BookingPassengerResponse> Passengers,
+    int? WaitlistPosition);
 public record AvailabilityResponse(int AvailableSeats);
 
 public record TrainAdminRequest(string TrainNumber, string Name);
