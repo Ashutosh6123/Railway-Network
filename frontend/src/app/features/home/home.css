@@ -1,0 +1,155 @@
+.home-page {
+  min-height: calc(100vh - 72px);
+  padding: 72px 0 96px;
+}
+
+.hero-section {
+  max-width: 760px;
+  margin: 0 auto 48px;
+}
+
+.hero-label {
+  display: inline-block;
+  margin-bottom: 16px;
+  padding: 6px 12px;
+
+  border-radius: 999px;
+
+  background-color: #e7f1ff;
+  color: var(--rr-primary);
+
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.hero-section h1 {
+  margin-bottom: 16px;
+
+  font-size: clamp(2.25rem, 5vw, 3.75rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -1.5px;
+}
+
+.hero-description {
+  max-width: 600px;
+  margin: 0 auto;
+
+  color: var(--rr-text-muted);
+  font-size: 1.1rem;
+  line-height: 1.7;
+}
+
+.search-card {
+  max-width: 1050px;
+  margin: 0 auto;
+  padding: 32px;
+
+  background-color: var(--rr-surface);
+  border: 1px solid var(--rr-border);
+  border-radius: var(--rr-radius-lg);
+  box-shadow: var(--rr-shadow-md);
+}
+
+.search-card-header {
+  margin-bottom: 28px;
+}
+
+.search-card-header h2 {
+  margin-bottom: 6px;
+
+  font-size: 1.4rem;
+  font-weight: 650;
+}
+
+.search-card-header p {
+  margin: 0;
+  color: var(--rr-text-muted);
+}
+
+.search-action {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 28px;
+}
+
+.search-action .btn {
+  min-width: 150px;
+}
+
+@media (max-width: 767.98px) {
+  .home-page {
+    padding: 48px 0 64px;
+  }
+
+  .hero-section {
+    margin-bottom: 32px;
+  }
+
+  .hero-section h1 {
+    letter-spacing: -0.8px;
+  }
+
+  .search-card {
+    padding: 24px 20px;
+  }
+
+  .search-action {
+    justify-content: stretch;
+  }
+
+  .search-action .btn {
+    width: 100%;
+  }
+}
+
+.station-suggestions {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+
+  margin-top: 4px;
+
+  background-color: var(--rr-surface);
+  border: 1px solid var(--rr-border);
+  border-radius: var(--rr-radius-md);
+  box-shadow: var(--rr-shadow-md);
+
+  overflow: hidden;
+}
+
+.station-suggestion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  width: 100%;
+  padding: 12px 14px;
+
+  border: 0;
+  background: transparent;
+
+  text-align: left;
+  cursor: pointer;
+}
+
+.station-suggestion:hover {
+  background-color: #f8f9fa;
+}
+
+.station-name {
+  color: var(--rr-text);
+  font-weight: 500;
+}
+
+.station-code {
+  color: var(--rr-text-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.station-field {
+  position: relative;
+}

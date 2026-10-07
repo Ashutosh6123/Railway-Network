@@ -1,0 +1,247 @@
+.pnr-page {
+  min-height: calc(100vh - 70px);
+}
+
+.page-header {
+  margin-bottom: 30px;
+}
+
+.page-eyebrow {
+  color: var(--rr-primary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.page-header h1 {
+  margin: 6px 0 8px;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.page-header p {
+  margin: 0;
+  color: var(--rr-text-muted);
+}
+
+.pnr-search-card {
+  margin-bottom: 24px;
+  padding: 24px;
+  background-color: var(--rr-surface);
+  border: 1px solid var(--rr-border);
+  border-radius: var(--rr-radius-lg);
+  box-shadow: var(--rr-shadow-sm);
+}
+
+.search-content {
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.search-row {
+  display: flex;
+  gap: 12px;
+}
+
+.search-row .form-control {
+  min-height: 44px;
+}
+
+.search-row .btn {
+  min-width: 130px;
+}
+
+.result-card {
+  padding: 24px;
+  background-color: var(--rr-surface);
+  border: 1px solid var(--rr-border);
+  border-radius: var(--rr-radius-lg);
+  box-shadow: var(--rr-shadow-sm);
+}
+
+.result-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--rr-border);
+}
+
+.detail-label {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--rr-text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.pnr-number {
+  font-size: 1.1rem;
+  letter-spacing: 0.06em;
+}
+
+.status-badge {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.status-confirmed {
+  background-color: #d1e7dd;
+  color: #146c43;
+}
+
+.status-waitlisted {
+  background-color: #fff3cd;
+  color: #997404;
+}
+
+.status-cancelled {
+  background-color: #f8d7da;
+  color: #842029;
+}
+
+.result-info {
+  padding: 22px 0;
+}
+
+.journey-section {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 24px 0;
+}
+
+.station {
+  flex: 1;
+}
+
+.station span {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--rr-text-muted);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+.station strong {
+  font-size: 1rem;
+}
+
+.journey-arrow {
+  color: var(--rr-primary);
+  font-size: 1.2rem;
+}
+
+.booking-info {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  padding: 18px 0;
+  border-top: 1px solid var(--rr-border);
+  border-bottom: 1px solid var(--rr-border);
+}
+
+.passenger-section {
+  padding-top: 22px;
+}
+
+.passenger-section h2 {
+  margin-bottom: 14px;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.passenger-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 20px;
+  padding: 14px 16px;
+  background-color: var(--rr-bg);
+  border-radius: var(--rr-radius-md);
+}
+
+.waitlist-info {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: var(--rr-radius-sm);
+  background-color: #fff3cd;
+  color: #664d03;
+  font-size: 0.9rem;
+}
+
+.result-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--rr-border);
+  color: var(--rr-text-muted);
+  font-size: 0.9rem;
+}
+
+.new-search {
+  display: flex;
+  justify-content: center;
+  margin-top: 22px;
+}
+
+@media (max-width: 767px) {
+  .search-row {
+    flex-direction: column;
+  }
+
+  .search-row .btn {
+    width: 100%;
+  }
+
+  .booking-info {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .journey-section {
+    gap: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .pnr-search-card,
+  .result-card {
+    padding: 18px;
+  }
+
+  .result-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .booking-info {
+    grid-template-columns: 1fr;
+  }
+
+  .journey-section {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .journey-arrow {
+    align-self: center;
+    transform: rotate(90deg);
+  }
+
+  .passenger-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .result-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

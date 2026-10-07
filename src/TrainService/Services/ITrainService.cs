@@ -11,4 +11,5 @@ public interface ITrainService
     Task<FareDto> GetFareAsync(int trainId, int fromStationId, int toStationId, CoachType coachType);
     Task<List<SeatInventoryDto>> GetSeatInventoryAsync(int trainId, CoachType coachType);
     Task<List<StationDto>> GetStationsAsync(string? searchTerm);
+    Task<List<TrainDto>> GetTrainsAsync(string? search);
 }

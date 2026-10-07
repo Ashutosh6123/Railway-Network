@@ -1,0 +1,136 @@
+<section class="home-page">
+
+  <div class="container">
+
+    <div class="hero-section text-center">
+
+      <span class="hero-label">
+        Railway Reservation System
+      </span>
+
+      <h1>
+        Book your journey with confidence
+      </h1>
+
+      <p class="hero-description">
+        Search trains, check availability, and reserve your journey
+        with ease.
+      </p>
+
+    </div>
+
+    <div class="search-card">
+
+      <div class="search-card-header">
+        <h2>Find a train</h2>
+        <p>Enter your journey details to search available trains.</p>
+      </div>
+
+      <div class="row g-3">
+
+        <div class="col-md-4 station-field">
+          <label for="fromStation" class="form-label">
+            From
+          </label>
+
+          <input
+            id="fromStation"
+            type="text"
+            class="form-control"
+            placeholder="Departure station"
+            [value]="fromSearchText"
+            (input)="onFromInput($event)"
+            (focus)="onFromFocus()"
+            (blur)="onFromBlur()">
+
+            <div
+                class="station-suggestions"
+                *ngIf="isFromFocused && fromSuggestions.length > 0">
+
+                <button
+                    type="button"
+                    class="station-suggestion"
+                    *ngFor="let station of fromSuggestions"
+                    (mousedown)="selectFromStation(station); $event.preventDefault()">
+
+                    <span class="station-name">
+                    {{ station.name }}
+                    </span>
+
+                    <span class="station-code">
+                    {{ station.code }}
+                    </span>
+
+                </button>
+
+            </div>
+
+        </div>
+
+        <div class="col-md-4 station-field">
+          <label for="toStation" class="form-label">
+            To
+          </label>
+
+          <input
+            id="toStation"
+            type="text"
+            class="form-control"
+            placeholder="Arrival station"
+            [value]="toSearchText"
+            (input)="onToInput($event)"
+            (focus)="onToFocus()"
+            (blur)="onToBlur()">
+
+            <div
+                class="station-suggestions"
+                *ngIf="isToFocused && toSuggestions.length > 0">
+
+                <button
+                    type="button"
+                    class="station-suggestion"
+                    *ngFor="let station of toSuggestions"
+                    (mousedown)="selectToStation(station); $event.preventDefault()">
+
+                    <span class="station-name">
+                    {{ station.name }}
+                    </span>
+
+                    <span class="station-code">
+                    {{ station.code }}
+                    </span>
+
+                </button>
+
+            </div>
+
+        </div>
+
+        <div class="col-md-4">
+          <label for="journeyDate" class="form-label">
+            Journey date
+          </label>
+
+          <input
+            id="journeyDate"
+            type="date"
+            class="form-control"
+            [min]="today">
+        </div>
+
+      </div>
+
+      <div class="search-action">
+        <button
+            type="button"
+            class="btn btn-primary"
+            (click)="searchTrains()">
+            Search Trains
+        </button>
+      </div>
+
+    </div>
+
+  </div>
+
+</section>

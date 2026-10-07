@@ -47,6 +47,18 @@ public class TrainService(
         return MapTrain(train);
     }
 
+    public async Task<List<TrainDto>> GetTrainsAsync(string? search)
+    {
+        if (string.IsNullOrWhiteSpace(search))
+        {
+            var trains = await trainRepository.GetAllAsync();
+            return trains.Select(MapTrain).ToList();
+        }
+
+        var matchingTrains = await trainRepository.SearchAsync(search.Trim());
+        return matchingTrains.Select(MapTrain).ToList();
+    }
+
     public async Task<List<RouteStopDto>> GetRouteAsync(int trainId)
     {
         await GetTrainAsync(trainId);

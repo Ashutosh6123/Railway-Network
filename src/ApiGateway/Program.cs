@@ -114,6 +114,11 @@ app.MapPost("/api/auth/login", (HttpContext context, LoginRequest request, Gatew
     .Produces(StatusCodes.Status401Unauthorized);
 
 // Public train information
+app.MapGet("/api/trains", (HttpContext context, string? search, GatewayProxy proxy) =>
+        proxy.ForwardAsync(context, "TrainService"))
+    .WithTags("Trains")
+    .Produces<List<TrainResponse>>();
+
 app.MapGet("/api/trains/search", (HttpContext context, int fromStationId, int toStationId, GatewayProxy proxy) =>
         proxy.ForwardAsync(context, "TrainService"))
     .WithTags("Trains")
@@ -267,5 +272,17 @@ admin.MapPost("/fares", (HttpContext context, FareAdminRequest request, GatewayP
 admin.MapPut("/fares/{fareId:int}", (HttpContext context, int fareId, FareAdminRequest request, GatewayProxy proxy) => proxy.ForwardJsonAsync(context, "TrainService", request));
 
 admin.MapDelete("/fares/{fareId:int}", (HttpContext context, int fareId, GatewayProxy proxy) => proxy.ForwardAsync(context, "TrainService")).Produces(StatusCodes.Status204NoContent);
+
+admin.MapGet(
+    "/trains/{trainId:int}/coaches",
+    (HttpContext context, int trainId, GatewayProxy proxy) =>
+        proxy.ForwardAsync(context, "TrainService")
+).Produces<List<CoachResponse>>();
+
+admin.MapGet(
+    "/coaches/{coachId:int}/seats",
+    (HttpContext context, int coachId, GatewayProxy proxy) =>
+        proxy.ForwardAsync(context, "TrainService")
+).Produces<List<SeatResponse>>();
 
 app.Run();

@@ -1,0 +1,99 @@
+@if (booking) {
+  <section class="confirmation-page container py-5">
+
+    <div class="confirmation-card">
+
+      <div class="confirmation-icon">
+        ✓
+      </div>
+
+      <h1>Booking Confirmed</h1>
+
+      <p class="confirmation-message">
+        Your railway ticket has been booked successfully.
+      </p>
+
+      <div class="pnr-section">
+        <span>PNR</span>
+        <strong>{{ booking.pnr }}</strong>
+      </div>
+
+      <div class="booking-details">
+
+        <div class="detail-row">
+          <span>Status</span>
+          <strong class="status-confirmed">Confirmed</strong>
+        </div>
+
+        <div class="detail-row">
+          <span>Total Fare</span>
+          <strong>₹{{ booking.totalFare }}</strong>
+        </div>
+
+      </div>
+
+      <div class="passenger-section">
+
+        <h2>Passenger Details</h2>
+
+        @for (passenger of booking.passengers; track passenger.bookingPassengerId) {
+          <div class="passenger-card">
+
+            <div>
+              <span class="detail-label">Passenger</span>
+              <strong>{{ passenger.name }}</strong>
+            </div>
+
+            <div>
+              <span class="detail-label">Coach</span>
+              <strong>{{ passenger.coachNumber }}</strong>
+            </div>
+
+            <div>
+              <span class="detail-label">Seat</span>
+              <strong>{{ passenger.seatNumber }}</strong>
+            </div>
+
+          </div>
+        }
+
+      </div>
+
+      <div class="confirmation-actions">
+
+        <a
+          routerLink="/my-bookings"
+          class="btn btn-primary">
+          View My Bookings
+        </a>
+
+        <a
+          routerLink="/"
+          class="btn btn-outline-secondary">
+          Back to Home
+        </a>
+
+      </div>
+
+    </div>
+
+  </section>
+} @else {
+  <section class="confirmation-page container py-5">
+    <div class="confirmation-card">
+
+      <h1>Booking Details Unavailable</h1>
+
+      <p class="confirmation-message">
+        We couldn't load the booking confirmation.
+      </p>
+
+      <a
+        routerLink="/"
+        class="btn btn-primary">
+        Back to Home
+      </a>
+
+    </div>
+  </section>
+}

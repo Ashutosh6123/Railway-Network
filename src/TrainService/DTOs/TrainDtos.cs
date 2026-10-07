@@ -32,4 +32,13 @@ public record SeatInventoryDto(
     int SeatId,
     string SeatNumber);
 
+public record CoachDto(
+    int Id,
+    int TrainId,
+    string CoachNumber,
+    CoachType CoachType);
 
+public record SeatDto(
+    int Id,
+    int CoachId,
+    string SeatNumber);

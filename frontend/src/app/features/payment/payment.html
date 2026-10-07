@@ -1,0 +1,140 @@
+<section class="payment-page">
+    <div class="container py-5">
+
+        <div class="payment-header">
+            <span class="section-label">PAYMENT</span>
+            <h1>Complete Your Payment</h1>
+            <p>Review your booking details and complete the payment.</p>
+        </div>
+
+        <div class="row g-4">
+
+            <!-- Payment form -->
+            <div class="col-lg-7">
+                <div class="payment-card">
+
+                    <div class="card-heading">
+                        <h2>Payment Method</h2>
+                        <p>This is a demo payment page.</p>
+                    </div>
+
+                    <div class="payment-method active">
+                        <div>
+                            <strong>Card Payment</strong>
+                            <span>Credit / Debit Card</span>
+                        </div>
+                        <span class="payment-radio"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="cardNumber" class="form-label">Card Number</label>
+                        <input id="cardNumber" type="text" class="form-control" [(ngModel)]="cardNumber"
+                            placeholder="1234 5678 9012 3456">
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="expiry" class="form-label">Expiry Date</label>
+                            <input id="expiry" type="text" class="form-control" [(ngModel)]="expiry"
+                                placeholder="MM/YY">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="cvv" class="form-label">CVV</label>
+                            <input id="cvv" type="password" class="form-control" [(ngModel)]="cvv" placeholder="123">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="cardName" class="form-label">Cardholder Name</label>
+                        <input id="cardName" type="text" class="form-control" [(ngModel)]="cardName"
+                            placeholder="Enter cardholder name">
+                    </div>
+
+                    <button type="button" class="btn btn-primary payment-button"
+                        [disabled]="!isPaymentValid() || fare() === null || isPaymentProcessing()"
+                        (click)="processPayment()">
+
+                        @if (isPaymentProcessing()) {
+                        <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+                        Processing Payment...
+                        } @else {
+                        Pay ₹{{ fare() }}
+                        }
+
+                    </button>
+
+                    @if (paymentError()) {
+                    <div class="payment-error">
+                        {{ paymentError() }}
+                    </div>
+                    }
+
+                </div>
+            </div>
+
+            <!-- Booking summary -->
+            <div class="col-lg-5">
+                <div class="summary-card">
+
+                    <div class="card-heading">
+                        <span class="section-label">YOUR BOOKING</span>
+                        <h2>Booking Summary</h2>
+                        <p>Review your journey before making the payment.</p>
+                    </div>
+
+                    <div class="journey-summary">
+                        <div class="journey-station">
+                            <span>FROM</span>
+                            <strong>{{ booking?.fromStationName }}</strong>
+                        </div>
+
+                        <div class="journey-arrow">
+                            →
+                        </div>
+
+                        <div class="journey-station">
+                            <span>TO</span>
+                            <strong>{{ booking?.toStationName }}</strong>
+                        </div>
+                    </div>
+
+                    <div class="summary-row">
+                        <span>Journey Date</span>
+                        <strong>
+                            {{ booking?.request?.journeyDate | date:'d MMM yyyy' }}
+                        </strong>
+                    </div>
+
+                    <div class="summary-row">
+                        <span>Coach</span>
+                        <strong>{{ getCoachTypeName() }}</strong>
+                    </div>
+
+                    <div class="summary-row">
+                        <span>Passengers</span>
+                        <strong>{{ getPassengerCount() }}</strong>
+                    </div>
+
+                    <div class="summary-divider"></div>
+
+                    <div class="total-row">
+                        <span>Total Fare</span>
+                        @if (isFareLoading()) {
+                        <span class="fare-loading">
+                            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                            Loading...
+                        </span>
+                        } @else if (fare() !== null) {
+                        <strong>₹{{ fare() }}</strong>
+                        } @else {
+                        <strong>—</strong>
+                        }
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>

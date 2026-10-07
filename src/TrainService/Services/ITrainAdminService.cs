@@ -23,4 +23,6 @@ public interface ITrainAdminService
     Task CreateFareAsync(FareAdminRequest request);
     Task UpdateFareAsync(int fareId, FareAdminRequest request);
     Task DeleteFareAsync(int fareId);
+    Task<List<CoachDto>> GetCoachesAsync(int trainId);
+    Task<List<SeatDto>> GetSeatsAsync(int coachId);
 }

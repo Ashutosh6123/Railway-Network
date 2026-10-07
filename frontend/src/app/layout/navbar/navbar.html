@@ -1,0 +1,65 @@
+<nav class="navbar navbar-expand-lg bg-white border-bottom">
+    <div class="container">
+
+        <a class="navbar-brand fw-bold" routerLink="/">
+            RailReserve
+        </a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar"
+            aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="mainNavbar">
+
+            <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
+
+                <li class="nav-item">
+                    <a class="nav-link" routerLink="/trains">
+                        Search Trains
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" routerLink="/pnr">
+                        Check PNR
+                    </a>
+                </li>
+
+                @if (authService.isAuthenticated()) {
+
+                @if (authService.getRole() === 'Passenger') {
+                <li class="nav-item">
+                    <a class="nav-link" routerLink="/my-bookings">
+                        My Bookings
+                    </a>
+                </li>
+                }
+
+                <li class="nav-item">
+                    <button type="button" class="btn btn-outline-primary px-3" (click)="logout()">
+                        Logout
+                    </button>
+                </li>
+
+                } @else {
+
+                <li class="nav-item">
+                    <a class="nav-link" routerLink="/login">
+                        Login
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="btn btn-primary px-3" routerLink="/register">
+                        Register
+                    </a>
+                </li>
+
+                }
+
+            </ul>
+
+        </div>
+    </div>
+</nav>

@@ -1,0 +1,229 @@
+<section class="my-bookings-page container py-5">
+
+    <header class="page-header">
+        <span class="page-eyebrow">TRAVEL HISTORY</span>
+        <h1>My Bookings</h1>
+        <p>View your upcoming and previous railway reservations.</p>
+    </header>
+
+    @if (cancellationSuccess()) {
+    <div class="alert alert-success">
+        {{ cancellationSuccess() }}
+    </div>
+    }
+
+    @if (isLoading()) {
+    <div class="state-card">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+
+        <p>Loading your bookings...</p>
+    </div>
+    }
+
+    @else if (errorMessage()) {
+    <div class="alert alert-danger">
+        {{ errorMessage() }}
+    </div>
+    }
+
+    @else if (bookings().length === 0) {
+    <div class="state-card empty-state">
+        <div class="empty-icon">○</div>
+
+        <h2>No bookings yet</h2>
+
+        <p>
+            Your confirmed and waitlisted bookings will appear here.
+        </p>
+
+        <a href="/" class="btn btn-primary">
+            Search Trains
+        </a>
+    </div>
+    }
+
+    @else {
+    <div class="booking-list">
+
+        @for (booking of bookings(); track booking.pnr) {
+
+        <article class="booking-card">
+
+            <div class="booking-header">
+
+                <div>
+                    <span class="detail-label">PNR</span>
+                    <strong class="pnr">{{ booking.pnr }}</strong>
+                </div>
+
+                <span class="status-badge" [class.status-confirmed]="booking.status === 0"
+                    [class.status-waitlisted]="booking.status === 1" [class.status-cancelled]="booking.status === 2">
+
+                    {{ getStatusName(booking.status) }}
+
+                </span>
+
+            </div>
+
+            <div class="journey-section">
+
+                <div class="station">
+                    <span>FROM</span>
+                    <strong>{{ getStationName(booking.fromStationId) }}</strong>
+                </div>
+
+                <div class="journey-arrow">
+                    →
+                </div>
+
+                <div class="station">
+                    <span>TO</span>
+                    <strong>{{ getStationName(booking.toStationId) }}</strong>
+                </div>
+
+            </div>
+
+            <div class="booking-info">
+
+                <div>
+                    <span class="detail-label">Journey Date</span>
+                    <strong>
+                        {{ booking.journeyDate | date:'d MMM yyyy' }}
+                    </strong>
+                </div>
+
+                <div>
+                    <span class="detail-label">Coach</span>
+                    <strong>
+                        {{ getCoachTypeName(booking.coachType) }}
+                    </strong>
+                </div>
+
+                <div>
+                    <span class="detail-label">Quota</span>
+                    <strong>
+                        {{ getQuotaName(booking.quota) }}
+                    </strong>
+                </div>
+
+                <div>
+                    <span class="detail-label">Total Fare</span>
+                    <strong>
+                        ₹{{ booking.totalFare }}
+                    </strong>
+                </div>
+
+                @if (canCancelBooking(booking)) {
+                <button type="button" class="btn btn-outline-danger btn-sm" (click)="confirmCancellation(booking)">
+                    Cancel Booking
+                </button>
+                }
+
+            </div>
+
+            <div class="passenger-section">
+
+                <h2>Passengers</h2>
+
+                @for (
+                passenger of booking.passengers;
+                track passenger.bookingPassengerId
+                ) {
+
+                <div class="passenger-row">
+
+                    <div>
+                        <span class="detail-label">Passenger</span>
+                        <strong>{{ passenger.name }}</strong>
+                    </div>
+
+                    <div>
+                        <span class="detail-label">Coach</span>
+                        <strong>{{ passenger.coachNumber }}</strong>
+                    </div>
+
+                    <div>
+                        <span class="detail-label">Seat</span>
+                        <strong>{{ passenger.seatNumber }}</strong>
+                    </div>
+
+                </div>
+
+                }
+
+            </div>
+
+            @if (booking.waitlistPosition !== null) {
+            <div class="waitlist-info">
+                Waitlist Position:
+                <strong>{{ booking.waitlistPosition }}</strong>
+            </div>
+            }
+
+        </article>
+
+        }
+
+    </div>
+    }
+    @if (bookingToCancel(); as booking) {
+    <div class="cancellation-overlay">
+        <div class="cancellation-dialog">
+
+            <h3>Cancel this booking?</h3>
+
+            <p class="text-muted">
+                Are you sure you want to cancel this booking?
+                This action cannot be undone.
+            </p>
+
+            <div class="cancellation-summary">
+                <div>
+                    <span>PNR</span>
+                    <strong>{{ booking.pnr }}</strong>
+                </div>
+
+                <div>
+                    <span>Amount paid</span>
+                    <strong>₹{{ booking.totalFare | number:'1.2-2' }}</strong>
+                </div>
+
+                <div>
+                    <span>Expected refund</span>
+                    <strong>₹{{ booking.totalFare | number:'1.2-2' }}</strong>
+                </div>
+            </div>
+
+            @if (cancellationError()) {
+            <div class="alert alert-danger mt-3">
+                {{ cancellationError() }}
+            </div>
+            }
+
+            <div class="d-flex justify-content-end gap-2 mt-4">
+                <button type="button" class="btn btn-outline-secondary" (click)="closeCancellation()"
+                    [disabled]="isCancellationProcessing()">
+                    Keep Booking
+                </button>
+
+                <button type="button" class="btn btn-danger" (click)="cancelBooking()"
+                    [disabled]="isCancellationProcessing()">
+
+                    @if (isCancellationProcessing()) {
+                    <span class="spinner-border spinner-border-sm me-2" aria-hidden="true">
+                    </span>
+                    Cancelling...
+                    } @else {
+                    Confirm Cancellation
+                    }
+
+                </button>
+            </div>
+
+        </div>
+    </div>
+    }
+
+</section>

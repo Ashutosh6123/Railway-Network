@@ -1,0 +1,257 @@
+.admin-page {
+  min-height: calc(100vh - 72px);
+  padding: 3.5rem 0 4rem;
+}
+
+.admin-header {
+  max-width: 1050px;
+  margin: 0 auto 2.5rem;
+}
+
+.admin-label {
+  display: inline-block;
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  background: #e7f1ff;
+  color: var(--bs-primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 0.9rem;
+}
+
+.admin-header h1 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 2.8rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.admin-header p {
+  margin: 0.75rem 0 0;
+  color: #6c757d;
+  font-size: 1rem;
+}
+
+.admin-content {
+  max-width: 1050px;
+  margin: 0 auto;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.section-header h2 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 650;
+}
+
+.section-header p {
+  margin: 0.35rem 0 0;
+  color: #6c757d;
+}
+
+.table-card {
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.05);
+}
+
+.admin-table {
+  vertical-align: middle;
+}
+
+.admin-table thead th {
+  padding: 1rem 1.25rem;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e5e7eb;
+  color: #495057;
+  font-size: 0.85rem;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.admin-table tbody td {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #edf0f2;
+}
+
+.admin-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.train-number {
+  font-weight: 650;
+}
+
+.actions-column {
+  width: 190px;
+  text-align: right;
+}
+
+.actions-column .btn {
+  margin-left: 0.5rem;
+}
+
+.state-card {
+  padding: 3rem 1.5rem;
+  text-align: center;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.04);
+}
+
+.state-card p {
+  margin: 0;
+  color: #6c757d;
+}
+
+.state-card h3 {
+  margin-bottom: 0.5rem;
+  font-size: 1.2rem;
+}
+
+.error-state p {
+  margin-bottom: 1rem;
+  color: #dc3545;
+}
+
+@media (max-width: 767.98px) {
+
+  .admin-page {
+    padding-top: 2.5rem;
+  }
+
+  .section-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .section-header .btn {
+    width: 100%;
+  }
+}
+
+  .form-card {
+  margin-bottom: 2rem;
+  padding: 1.75rem 2rem;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.04);
+}
+
+.form-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+}
+
+.form-card-header h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 650;
+  color: #212529;
+}
+
+.form-card-header p {
+  margin: 0.5rem 0 0;
+  color: #6c757d;
+  font-size: 0.95rem;
+}
+
+.close-form-button {
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+  min-width: 72px;
+}
+
+/* Space between the form fields and the header */
+.form-card .row {
+  row-gap: 1.25rem;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 0.55rem;
+  font-weight: 600;
+  color: #343a40;
+}
+
+.form-control {
+  min-height: 46px;
+  border-color: #d9dee3;
+  border-radius: 8px;
+}
+
+.form-control:focus {
+  border-color: #86b7fe;
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.1);
+}
+
+.form-error {
+  margin-top: 1.25rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: #fff5f5;
+  color: #dc3545;
+  font-size: 0.9rem;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #edf0f2;
+}
+
+.form-actions .btn {
+  min-width: 105px;
+}
+
+.actions-column {
+width: auto;
+text-align: left;
+}
+
+.actions-column .btn {
+margin-left: 0;
+margin-right: 0.35rem;
+}
+
+.delete-error {
+  margin-bottom: 1.25rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #f5c2c7;
+  border-radius: 8px;
+  background: #fff5f5;
+  color: #842029;
+  font-size: 0.9rem;
+}
+.management-section {
+  margin-top: 3.5rem;
+}
+.section-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.actions-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}

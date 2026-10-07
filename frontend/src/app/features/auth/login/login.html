@@ -1,0 +1,82 @@
+<section class="login-page">
+  <div class="container">
+    <div class="login-card">
+
+      <div class="login-header">
+        <span class="login-label">WELCOME BACK</span>
+
+        <h1>Login to RailReserve</h1>
+
+        <p>
+          Sign in to manage your bookings and reserve your journey.
+        </p>
+      </div>
+
+      @if (errorMessage) {
+        <div class="alert alert-danger">
+          {{ errorMessage }}
+        </div>
+      }
+
+      <form (ngSubmit)="login()">
+
+        <div class="mb-3">
+          <label
+            for="email"
+            class="form-label">
+            Email
+          </label>
+
+          <input
+            id="email"
+            name="email"
+            type="email"
+            class="form-control"
+            [(ngModel)]="email"
+            placeholder="Enter your email"
+            autocomplete="email">
+        </div>
+
+        <div class="mb-4">
+          <label
+            for="password"
+            class="form-label">
+            Password
+          </label>
+
+          <input
+            id="password"
+            name="password"
+            type="password"
+            class="form-control"
+            [(ngModel)]="password"
+            placeholder="Enter your password"
+            autocomplete="current-password">
+        </div>
+
+        <button
+          type="submit"
+          class="btn btn-primary w-100"
+          [disabled]="isLoading">
+
+          @if (isLoading) {
+            Signing in...
+          } @else {
+            Sign In
+          }
+
+        </button>
+
+      </form>
+
+      <div class="login-footer">
+        <span>Don't have an account?</span>
+
+        <a routerLink="/register">
+          Create an account
+        </a>
+      </div>
+
+    </div>
+  </div>
+</section>

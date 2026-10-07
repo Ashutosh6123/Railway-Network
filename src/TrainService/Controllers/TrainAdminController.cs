@@ -28,6 +28,15 @@ public class TrainAdminController(ITrainAdminService trainAdminService) : Contro
         return NoContent();
     }
 
+    [HttpGet("trains/{trainId:int}/coaches")]
+    public async Task<ActionResult<List<CoachDto>>> GetCoaches(int trainId) =>
+        Ok(await trainAdminService.GetCoachesAsync(trainId));
+
+        [HttpGet("coaches/{coachId:int}/seats")]
+    public async Task<ActionResult<List<SeatDto>>> GetSeats(int coachId) =>
+        Ok(await trainAdminService.GetSeatsAsync(coachId));
+
+
     [HttpPost("stations")]
     [ProducesResponseType(typeof(StationDto), StatusCodes.Status201Created)]
     public async Task<ActionResult<StationDto>> CreateStation(StationAdminRequest request)

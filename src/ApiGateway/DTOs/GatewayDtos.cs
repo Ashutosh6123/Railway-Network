@@ -98,3 +98,14 @@ public record FareAdminRequest(
     int ToStationId, 
     CoachType CoachType, 
     decimal Amount);
+
+public record CoachResponse(
+    int Id,
+    int TrainId,
+    string CoachNumber,
+    CoachType CoachType);
+
+public record SeatResponse(
+    int Id,
+    int CoachId,
+    string SeatNumber);

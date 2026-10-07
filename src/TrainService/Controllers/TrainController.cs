@@ -28,4 +28,9 @@ public class TrainController(ITrainService trainService) : ControllerBase
         int toStationId,
         CoachType coachType) =>
         Ok(await trainService.GetFareAsync(trainId, fromStationId, toStationId, coachType));
-}
+
+    [HttpGet]
+    public async Task<ActionResult<List<TrainDto>>> GetTrains(
+        [FromQuery] string? search) =>
+        Ok(await trainService.GetTrainsAsync(search));
+    }

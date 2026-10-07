@@ -149,6 +149,21 @@ public class TrainAdminService(
         return result;
     }
 
+    public async Task<List<CoachDto>> GetCoachesAsync(int trainId)
+    {
+        await TrainOrThrow(trainId);
+
+        var coachesForTrain = await coaches.GetByTrainIdAsync(trainId);
+
+        return coachesForTrain
+            .Select(coach => new CoachDto(
+                coach.Id,
+                coach.TrainId,
+                coach.CoachNumber,
+                coach.CoachType))
+            .ToList();
+    }
+
     public async Task CreateCoachAsync(CoachAdminRequest request)
     {
         Positive(request.TrainId, nameof(request.TrainId));
@@ -173,6 +188,21 @@ public class TrainAdminService(
         Positive(coachId, nameof(coachId));
         var coach = await coaches.GetByIdAsync(coachId) ?? throw new InvalidOperationException("Coach was not found.");
         await coaches.DeleteAsync(coach);
+    }
+
+    public async Task<List<SeatDto>> GetSeatsAsync(int coachId)
+    {
+        var coach = await coaches.GetByIdAsync(coachId)
+            ?? throw new InvalidOperationException("Coach was not found.");
+
+        var coachSeats = await seats.GetByCoachIdAsync(coach.Id);
+
+        return coachSeats
+            .Select(seat => new SeatDto(
+                seat.Id,
+                seat.CoachId,
+                seat.SeatNumber))
+            .ToList();
     }
 
     public async Task CreateSeatAsync(SeatAdminRequest request)

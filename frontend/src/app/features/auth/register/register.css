@@ -1,0 +1,95 @@
+.register-page {
+  min-height: calc(100vh - 72px);
+  display: flex;
+  align-items: center;
+  padding: 48px 0;
+}
+
+.register-card {
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 36px;
+  background: #ffffff;
+  border: 1px solid var(--rr-border);
+  border-radius: var(--rr-radius-lg);
+  box-shadow: var(--rr-shadow-sm);
+}
+
+.register-header {
+  margin-bottom: 28px;
+}
+
+.register-label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--rr-primary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.register-header h1 {
+  margin-bottom: 10px;
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--rr-text);
+}
+
+.register-header p {
+  margin: 0;
+  color: var(--rr-text-muted);
+  line-height: 1.6;
+}
+
+.form-label {
+  margin-bottom: 7px;
+  color: var(--rr-text);
+  font-weight: 600;
+}
+
+.form-control {
+  min-height: 46px;
+  border-color: var(--rr-border);
+  border-radius: var(--rr-radius-md);
+}
+
+.form-control:focus {
+  border-color: var(--rr-primary);
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.1);
+}
+
+.register-footer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  margin-top: 24px;
+  color: var(--rr-text-muted);
+  font-size: 0.9rem;
+}
+
+.register-footer a {
+  color: var(--rr-primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.register-footer a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 576px) {
+  .register-page {
+    padding: 32px 0;
+  }
+
+  .register-card {
+    padding: 28px 22px;
+  }
+
+  .register-header h1 {
+    font-size: 1.7rem;
+  }
+}

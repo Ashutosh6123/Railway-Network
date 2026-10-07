@@ -1,0 +1,1280 @@
+<section class="admin-page">
+
+    <div class="container">
+
+        <div class="admin-header">
+            <div>
+                <span class="admin-label">Administration</span>
+
+                <h1>Admin Dashboard</h1>
+
+                <p>
+                    Manage trains and railway network information for RailReserve.
+                </p>
+            </div>
+        </div>
+
+
+        <div class="admin-content">
+
+            <div class="section-header">
+                <div>
+                    <h2>Train Management</h2>
+                    <p>View and manage the trains available in the system.</p>
+                </div>
+
+                <button type="button" class="btn btn-primary" (click)="openAddTrainForm()">
+                    + Add Train
+                </button>
+            </div>
+
+            @if (editingTrainId() !== null) {
+
+            <div class="form-card">
+
+                <div class="form-card-header">
+                    <div>
+                        <h3>Edit Train</h3>
+                        <p>Update the details for this train.</p>
+                    </div>
+
+                    <button type="button" class="btn btn-sm btn-outline-secondary" [disabled]="isEditingTrain()"
+                        (click)="cancelEditTrain()">
+                        Cancel
+                    </button>
+                </div>
+
+                <form (submit)="$event.preventDefault(); updateTrain()">
+
+                    <div class="row g-3">
+
+                        <div class="col-md-6">
+                            <label for="editTrainNumber" class="form-label">
+                                Train Number
+                            </label>
+
+                            <input id="editTrainNumber" type="text" class="form-control" [(ngModel)]="editTrainNumber"
+                                name="editTrainNumber" [disabled]="isEditingTrain()">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="editTrainName" class="form-label">
+                                Train Name
+                            </label>
+
+                            <input id="editTrainName" type="text" class="form-control" [(ngModel)]="editTrainName"
+                                name="editTrainName" [disabled]="isEditingTrain()">
+                        </div>
+
+                    </div>
+
+                    @if (editTrainError()) {
+                    <div class="form-error">
+                        {{ editTrainError() }}
+                    </div>
+                    }
+
+                    <div class="form-actions">
+
+                        <button type="button" class="btn btn-outline-secondary" [disabled]="isEditingTrain()"
+                            (click)="cancelEditTrain()">
+                            Cancel
+                        </button>
+
+                        <button type="submit" class="btn btn-primary" [disabled]="isEditingTrain()">
+
+                            @if (isEditingTrain()) {
+                            Saving...
+                            } @else {
+                            Save Changes
+                            }
+
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+            }
+
+            @if (showAddTrainForm()) {
+
+            <div class="form-card">
+
+                <div class="form-card-header">
+                    <div>
+                        <h3>Add Train</h3>
+                        <p>Enter the details for the new train.</p>
+                    </div>
+
+                    <button type="button" class="btn btn-sm btn-outline-secondary close-form-button"
+                        [disabled]="isAddingTrain()" (click)="closeAddTrainForm()">
+                        Close
+                    </button>
+                </div>
+
+
+                <form (submit)="$event.preventDefault(); addTrain()">
+
+                    <div class="row g-3">
+
+                        <div class="col-md-6">
+
+                            <label for="trainNumber" class="form-label">
+                                Train Number
+                            </label>
+
+                            <input id="trainNumber" type="text" class="form-control" [(ngModel)]="trainNumber"
+                                name="trainNumber" placeholder="e.g. 12001" [disabled]="isAddingTrain()">
+
+                        </div>
+
+
+                        <div class="col-md-6">
+
+                            <label for="trainName" class="form-label">
+                                Train Name
+                            </label>
+
+                            <input id="trainName" type="text" class="form-control" [(ngModel)]="trainName"
+                                name="trainName" placeholder="e.g. Northern Express" [disabled]="isAddingTrain()">
+
+                        </div>
+
+                    </div>
+
+
+                    @if (addTrainError()) {
+                    <div class="form-error">
+                        {{ addTrainError() }}
+                    </div>
+                    }
+
+
+                    <div class="form-actions">
+
+                        <button type="button" class="btn btn-outline-secondary" [disabled]="isAddingTrain()"
+                            (click)="closeAddTrainForm()">
+                            Cancel
+                        </button>
+
+                        <button type="submit" class="btn btn-primary" [disabled]="isAddingTrain()">
+
+                            @if (isAddingTrain()) {
+                            Creating...
+                            } @else {
+                            Create Train
+                            }
+
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+            @if (deleteTrainError()) {
+            <div class="delete-error">
+                {{ deleteTrainError() }}
+            </div>
+            }
+
+            }
+
+
+            @if (isLoading()) {
+
+            <div class="state-card">
+                <p>Loading trains...</p>
+            </div>
+
+            } @else if (errorMessage()) {
+
+            <div class="state-card error-state">
+                <p>{{ errorMessage() }}</p>
+
+                <button type="button" class="btn btn-outline-primary" (click)="loadTrains()">
+                    Try Again
+                </button>
+            </div>
+
+            } @else if (trains().length === 0) {
+
+            <div class="state-card">
+                <h3>No trains found</h3>
+                <p>
+                    There are currently no trains available in the system.
+                </p>
+            </div>
+
+            } @else {
+
+            <div class="table-card">
+
+                <div class="table-responsive">
+
+                    <table class="table admin-table mb-0">
+
+                        <thead>
+                            <tr>
+                                <th>Train Number</th>
+                                <th>Train Name</th>
+                                <th class="actions-column">Actions</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            @for (train of trains(); track train.id) {
+
+                            <tr>
+                                <td>
+                                    <span class="train-number">
+                                        {{ train.trainNumber }}
+                                    </span>
+                                </td>
+
+                                <td>
+                                    {{ train.name }}
+                                </td>
+
+                                <td class="actions-column">
+
+                                    <button type="button" class="btn btn-sm btn-outline-secondary"
+                                        (click)="viewRoute(train)">
+                                        Route
+                                    </button>
+
+                                    <button type="button" class="btn btn-sm btn-outline-primary"
+                                        (click)="viewCoaches(train)">
+                                        Coaches
+                                    </button>
+
+                                    <button type="button" class="btn btn-sm btn-outline-primary"
+                                        (click)="startEditTrain(train)">
+                                        Edit
+                                    </button>
+
+                                    <button type="button" class="btn btn-sm btn-outline-danger"
+                                        [disabled]="deletingTrainId() === train.id" (click)="deleteTrain(train)">
+
+                                        @if (deletingTrainId() === train.id) {
+                                        Deleting...
+                                        } @else {
+                                        Delete
+                                        }
+
+                                    </button>
+
+                                </td>
+                            </tr>
+
+                            }
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+            }
+
+            @if (selectedRouteTrain() !== null) {
+
+            <section class="management-section route-section">
+
+                <div class="section-header">
+
+                    <div>
+                        <h2>Route Stops</h2>
+
+                        <p>
+                            Manage the stations served by
+                            <strong>
+                                {{ selectedRouteTrain()?.trainNumber }}
+                                — {{ selectedRouteTrain()?.name }}
+                            </strong>.
+                        </p>
+                    </div>
+
+                    <div class="section-actions">
+
+                        <button type="button" class="btn btn-primary" (click)="openAddRouteStopForm()">
+                            + Add Route Stop
+                        </button>
+
+                        <button type="button" class="btn btn-outline-secondary" (click)="closeRoute()">
+                            Close Route
+                        </button>
+
+                    </div>
+
+                </div>
+
+                @if (editingRouteStopId() !== null) {
+
+                <div class="form-card">
+
+                    <div class="form-card-header">
+
+                        <div>
+                            <h3>Edit Route Stop</h3>
+                            <p>Update the details for this route stop.</p>
+                        </div>
+
+                        <button type="button" class="btn btn-sm btn-outline-secondary close-form-button"
+                            [disabled]="isEditingRouteStop()" (click)="cancelEditRouteStop()">
+                            Close
+                        </button>
+
+                    </div>
+
+
+                    <form (submit)="$event.preventDefault(); updateRouteStop()">
+
+                        <div class="row g-3">
+
+                            <div class="col-md-6">
+
+                                <label for="editRouteStopStation" class="form-label">
+                                    Station
+                                </label>
+
+                                <select id="editRouteStopStation" class="form-select"
+                                    [(ngModel)]="editRouteStopStationId" name="editRouteStopStation"
+                                    [disabled]="isEditingRouteStop()">
+
+                                    <option [ngValue]="null">
+                                        Select a station
+                                    </option>
+
+                                    @for (station of stations(); track station.id) {
+
+                                    <option [ngValue]="station.id">
+                                        {{ station.code }} — {{ station.name }}
+                                    </option>
+
+                                    }
+
+                                </select>
+
+                            </div>
+
+
+                            <div class="col-md-6">
+
+                                <label for="editRouteStopOrder" class="form-label">
+                                    Stop Order
+                                </label>
+
+                                <input id="editRouteStopOrder" type="number" min="1" class="form-control"
+                                    [(ngModel)]="editRouteStopOrder" name="editRouteStopOrder"
+                                    [disabled]="isEditingRouteStop()">
+
+                            </div>
+
+
+                            <div class="col-md-6">
+
+                                <label for="editRouteStopArrival" class="form-label">
+                                    Arrival Time
+                                </label>
+
+                                <input id="editRouteStopArrival" type="time" class="form-control"
+                                    [(ngModel)]="editRouteStopArrivalTime" name="editRouteStopArrival"
+                                    [disabled]="isEditingRouteStop()">
+
+                            </div>
+
+
+                            <div class="col-md-6">
+
+                                <label for="editRouteStopDeparture" class="form-label">
+                                    Departure Time
+                                </label>
+
+                                <input id="editRouteStopDeparture" type="time" class="form-control"
+                                    [(ngModel)]="editRouteStopDepartureTime" name="editRouteStopDeparture"
+                                    [disabled]="isEditingRouteStop()">
+
+                            </div>
+
+                        </div>
+
+
+                        @if (editRouteStopError()) {
+
+                        <div class="form-error">
+                            {{ editRouteStopError() }}
+                        </div>
+
+                        }
+
+
+                        <div class="form-actions">
+
+                            <button type="button" class="btn btn-outline-secondary" [disabled]="isEditingRouteStop()"
+                                (click)="cancelEditRouteStop()">
+                                Cancel
+                            </button>
+
+                            <button type="submit" class="btn btn-primary" [disabled]="isEditingRouteStop()">
+
+                                @if (isEditingRouteStop()) {
+                                Saving...
+                                } @else {
+                                Save Changes
+                                }
+
+                            </button>
+
+                        </div>
+
+                    </form>
+
+                </div>
+
+                }
+
+                @if (showAddRouteStopForm()) {
+
+                <div class="form-card">
+
+                    <div class="form-card-header">
+
+                        <div>
+                            <h3>Add Route Stop</h3>
+
+                            <p>
+                                Add a station to the selected train's route.
+                            </p>
+                        </div>
+
+                        <button type="button" class="btn btn-sm btn-outline-secondary close-form-button"
+                            [disabled]="isAddingRouteStop()" (click)="closeAddRouteStopForm()">
+                            Close
+                        </button>
+
+                    </div>
+
+
+                    <form (submit)="$event.preventDefault(); addRouteStop()">
+
+                        <div class="row g-3">
+
+                            <div class="col-md-6">
+
+                                <label for="routeStopStation" class="form-label">
+                                    Station
+                                </label>
+
+                                <select id="routeStopStation" class="form-select" [(ngModel)]="routeStopStationId"
+                                    name="routeStopStation" [disabled]="isAddingRouteStop()">
+
+                                    <option [ngValue]="null">
+                                        Select a station
+                                    </option>
+
+                                    @for (station of stations(); track station.id) {
+
+                                    <option [ngValue]="station.id">
+                                        {{ station.code }} — {{ station.name }}
+                                    </option>
+
+                                    }
+
+                                </select>
+
+                            </div>
+
+
+                            <div class="col-md-6">
+
+                                <label for="routeStopOrder" class="form-label">
+                                    Stop Order
+                                </label>
+
+                                <input id="routeStopOrder" type="number" min="1" class="form-control"
+                                    [(ngModel)]="routeStopOrder" name="routeStopOrder" [disabled]="isAddingRouteStop()">
+
+                            </div>
+
+
+                            <div class="col-md-6">
+
+                                <label for="routeStopArrival" class="form-label">
+                                    Arrival Time
+                                </label>
+
+                                <input id="routeStopArrival" type="time" class="form-control"
+                                    [(ngModel)]="routeStopArrivalTime" name="routeStopArrival"
+                                    [disabled]="isAddingRouteStop()">
+
+                            </div>
+
+
+                            <div class="col-md-6">
+
+                                <label for="routeStopDeparture" class="form-label">
+                                    Departure Time
+                                </label>
+
+                                <input id="routeStopDeparture" type="time" class="form-control"
+                                    [(ngModel)]="routeStopDepartureTime" name="routeStopDeparture"
+                                    [disabled]="isAddingRouteStop()">
+
+                            </div>
+
+                        </div>
+
+
+                        @if (addRouteStopError()) {
+
+                        <div class="form-error">
+                            {{ addRouteStopError() }}
+                        </div>
+
+                        }
+
+
+                        <div class="form-actions">
+
+                            <button type="button" class="btn btn-outline-secondary" [disabled]="isAddingRouteStop()"
+                                (click)="closeAddRouteStopForm()">
+                                Cancel
+                            </button>
+
+                            <button type="submit" class="btn btn-primary" [disabled]="isAddingRouteStop()">
+
+                                @if (isAddingRouteStop()) {
+                                Adding...
+                                } @else {
+                                Add Route Stop
+                                }
+
+                            </button>
+
+                        </div>
+
+                    </form>
+
+                </div>
+
+                }
+
+                @if (deleteRouteStopError()) {
+                <div class="form-error">
+                    {{ deleteRouteStopError() }}
+                </div>
+                }
+
+
+                @if (isRouteLoading()) {
+
+                <div class="state-card">
+                    <p>Loading route...</p>
+                </div>
+
+                } @else if (routeError()) {
+
+                <div class="state-card error-state">
+
+                    <p>{{ routeError() }}</p>
+
+                    <button type="button" class="btn btn-outline-primary" (click)="viewRoute(selectedRouteTrain()!)">
+                        Try Again
+                    </button>
+
+                </div>
+
+                } @else if (routeStops().length === 0) {
+
+                <div class="state-card">
+
+                    <h3>No route stops found</h3>
+
+                    <p>
+                        This train currently has no route stops configured.
+                    </p>
+
+                </div>
+
+                } @else {
+
+                <div class="table-card">
+
+                    <div class="table-responsive">
+
+                        <table class="table admin-table mb-0">
+
+                            <thead>
+                                <tr>
+                                    <th>Order</th>
+                                    <th>Station</th>
+                                    <th>Arrival</th>
+                                    <th>Departure</th>
+                                    <th class="actions-column">Actions</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+
+                                @for (stop of routeStops(); track stop.id) {
+
+                                <tr>
+
+                                    <td>
+                                        {{ stop.stopOrder }}
+                                    </td>
+
+                                    <td>
+                                        <span class="train-number">
+                                            {{ stop.stationCode }}
+                                        </span>
+
+                                        <div class="station-name">
+                                            {{ stop.stationName }}
+                                        </div>
+                                    </td>
+
+                                    <td>
+                                        {{ stop.arrivalTime }}
+                                    </td>
+
+                                    <td>
+                                        {{ stop.departureTime }}
+                                    </td>
+
+                                    <td class="actions-cell">
+
+                                        <button type="button" class="btn btn-sm btn-outline-primary" [disabled]="
+      deletingRouteStopId() !== null ||
+      editingRouteStopId() !== null
+    " (click)="startEditRouteStop(stop)">
+                                            Edit
+                                        </button>
+
+                                        <button type="button" class="btn btn-sm btn-outline-danger" [disabled]="
+      deletingRouteStopId() !== null ||
+      editingRouteStopId() !== null
+    " (click)="deleteRouteStop(stop)">
+
+                                            @if (deletingRouteStopId() === stop.id) {
+                                            Deleting...
+                                            } @else {
+                                            Delete
+                                            }
+
+                                        </button>
+
+                                    </td>
+
+                                </tr>
+
+                                }
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+                }
+
+            </section>
+
+            }
+
+            @if (selectedCoachTrain(); as train) {
+            <section class="admin-section">
+
+                <div class="section-header">
+                    <div>
+                        <h2>Coach Management</h2>
+                        <p>
+                            {{ train.trainNumber }} — {{ train.name }}
+                        </p>
+                    </div>
+
+                    <button type="button" class="btn btn-outline-secondary" (click)="closeCoaches()">
+                        Close
+                    </button>
+                </div>
+
+                @if (isCoachLoading()) {
+                <p>Loading coaches...</p>
+                }
+
+                @if (coachError()) {
+                <div class="alert alert-danger">
+                    {{ coachError() }}
+                </div>
+                }
+
+                @if (!isCoachLoading() && !coachError()) {
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <p class="mb-0">
+                        @if (coaches().length === 0) {
+                        No coaches found for this train.
+                        } @else {
+                        Coaches
+                        }
+                    </p>
+
+                    <button type="button" class="btn btn-primary" (click)="openAddCoachForm()">
+                        Add Coach
+                    </button>
+                </div>
+
+                @if (showAddCoachForm()) {
+                <div class="form-card">
+
+                    <div class="form-card-header">
+                        <div>
+                            <h3>Add Coach</h3>
+                            <p>
+                                Add a coach to {{ selectedCoachTrain()?.trainNumber }}
+                            </p>
+                        </div>
+
+                        <button type="button" class="btn btn-outline-secondary close-form-button"
+                            [disabled]="isAddingCoach()" (click)="closeAddCoachForm()">
+                            Close
+                        </button>
+                    </div>
+
+                    <form #addCoachForm="ngForm" (ngSubmit)="addCoach(addCoachForm)">
+
+                        <div class="row">
+
+                            <div class="col-md-6">
+                                <label for="coachNumber" class="form-label">
+                                    Coach Number
+                                </label>
+
+                                <input id="coachNumber" name="coachNumber" type="text" class="form-control" required
+                                    maxlength="50" ngModel #coachNumber="ngModel" />
+
+                                @if (coachNumber.invalid && coachNumber.touched) {
+                                <div class="form-error">
+                                    Coach number is required.
+                                </div>
+                                }
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="coachType" class="form-label">
+                                    Coach Type
+                                </label>
+
+                                <select id="coachType" name="coachType" class="form-select" required ngModel
+                                    #coachType="ngModel">
+                                    <option value="" disabled>Select coach type</option>
+                                    <option value="0">General</option>
+                                    <option value="1">Sleeper</option>
+                                    <option value="2">AC3Tier</option>
+                                    <option value="3">AC2Tier</option>
+                                    <option value="4">AC1Tier</option>
+                                </select>
+
+                                @if (coachType.invalid && coachType.touched) {
+                                <div class="form-error">
+                                    Coach type is required.
+                                </div>
+                                }
+                            </div>
+
+                        </div>
+
+                        @if (addCoachError()) {
+                        <div class="form-error">
+                            {{ addCoachError() }}
+                        </div>
+                        }
+
+                        <div class="form-actions">
+
+                            <button type="button" class="btn btn-outline-secondary" [disabled]="isAddingCoach()"
+                                (click)="closeAddCoachForm()">
+                                Cancel
+                            </button>
+
+                            <button type="submit" class="btn btn-primary" [disabled]="isAddingCoach()">
+                                @if (isAddingCoach()) {
+                                Adding...
+                                } @else {
+                                Add Coach
+                                }
+                            </button>
+
+                        </div>
+
+                    </form>
+                </div>
+                }
+
+
+                @if (coaches().length > 0) {
+                <div class="table-card">
+                    <div class="table-responsive">
+                        @if (deleteCoachError()) {
+                        <div class="delete-error">
+                            {{ deleteCoachError() }}
+                        </div>
+                        }
+                        <table class="table admin-table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Coach Number</th>
+                                    <th>Coach Type</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                @for (coach of coaches(); track coach.id) {
+
+                                @if (editingCoachId() === coach.id) {
+
+                                <tr>
+                                    <td colspan="3">
+
+                                        <div class="form-card mb-0">
+
+                                            <div class="form-card-header">
+                                                <div>
+                                                    <h3>Edit Coach</h3>
+                                                    <p>
+                                                        Update coach {{ coach.coachNumber }}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            <form #editCoachForm="ngForm"
+                                                (ngSubmit)="updateCoach(coach, editCoachForm)">
+
+                                                <div class="row">
+
+                                                    <div class="col-md-6">
+                                                        <label for="editCoachNumber{{ coach.id }}" class="form-label">
+                                                            Coach Number
+                                                        </label>
+
+                                                        <input [id]="'editCoachNumber' + coach.id" name="coachNumber"
+                                                            type="text" class="form-control" required maxlength="50"
+                                                            [ngModel]="coach.coachNumber" #editCoachNumber="ngModel" />
+
+                                                        @if (
+                                                        editCoachNumber.invalid &&
+                                                        editCoachNumber.touched
+                                                        ) {
+                                                        <div class="form-error">
+                                                            Coach number is required.
+                                                        </div>
+                                                        }
+                                                    </div>
+
+                                                    <div class="col-md-6">
+                                                        <label for="editCoachType{{ coach.id }}" class="form-label">
+                                                            Coach Type
+                                                        </label>
+
+                                                        <select [id]="'editCoachType' + coach.id" name="coachType"
+                                                            class="form-select" required [ngModel]="coach.coachType"
+                                                            #editCoachType="ngModel">
+                                                            <option value="" disabled>
+                                                                Select coach type
+                                                            </option>
+
+                                                            <option value="0">General</option>
+                                                            <option value="1">Sleeper</option>
+                                                            <option value="2">AC3Tier</option>
+                                                            <option value="3">AC2Tier</option>
+                                                            <option value="4">AC1Tier</option>
+                                                        </select>
+
+                                                        @if (
+                                                        editCoachType.invalid &&
+                                                        editCoachType.touched
+                                                        ) {
+                                                        <div class="form-error">
+                                                            Coach type is required.
+                                                        </div>
+                                                        }
+                                                    </div>
+
+                                                </div>
+
+                                                @if (updateCoachError()) {
+                                                <div class="form-error">
+                                                    {{ updateCoachError() }}
+                                                </div>
+                                                }
+
+                                                <div class="form-actions">
+
+                                                    <button type="button" class="btn btn-outline-secondary"
+                                                        [disabled]="isUpdatingCoach()" (click)="cancelEditCoach()">
+                                                        Cancel
+                                                    </button>
+
+                                                    <button type="submit" class="btn btn-primary"
+                                                        [disabled]="isUpdatingCoach()">
+                                                        @if (isUpdatingCoach()) {
+                                                        Saving...
+                                                        } @else {
+                                                        Save Changes
+                                                        }
+                                                    </button>
+
+                                                </div>
+
+                                            </form>
+
+                                        </div>
+
+                                    </td>
+                                </tr>
+
+                                } @else {
+
+                                <tr>
+                                    <td>
+                                        {{ coach.coachNumber }}
+                                    </td>
+
+                                    <td>
+                                        {{ getCoachTypeName(coach.coachType) }}
+                                    </td>
+
+                                    <td>
+                                        <div class="actions-cell">
+
+                                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                                (click)="startEditCoach(coach)">
+                                                Edit
+                                            </button>
+
+                                            <button type="button" class="btn btn-sm btn-outline-danger"
+                                                [disabled]="deletingCoachId() === coach.id"
+                                                (click)="deleteCoach(coach)">
+                                                @if (deletingCoachId() === coach.id) {
+                                                Deleting...
+                                                } @else {
+                                                Delete
+                                                }
+                                            </button>
+
+                                            <button type="button" class="btn btn-sm btn-outline-secondary">
+                                                Manage Seats
+                                            </button>
+
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                }
+
+
+                }
+
+            </section>
+            }
+
+            <section class="management-section">
+
+                <div class="section-header">
+
+
+
+                    <div>
+                        <h2>Station Management</h2>
+
+                        <p>
+                            View and manage the railway stations available in the system.
+                        </p>
+                    </div>
+
+                    <button type="button" class="btn btn-primary" (click)="openAddStationForm()">
+                        + Add Station
+                    </button>
+
+                </div>
+
+                @if (editingStationId() !== null) {
+
+                <div class="form-card">
+
+                    <div class="form-card-header">
+
+                        <div>
+                            <h3>Edit Station</h3>
+                            <p>Update the details for this station.</p>
+                        </div>
+
+                        <button type="button" class="btn btn-sm btn-outline-secondary close-form-button"
+                            [disabled]="isEditingStation()" (click)="cancelEditStation()">
+                            Close
+                        </button>
+
+                    </div>
+
+                    <form (submit)="$event.preventDefault(); updateStation()">
+
+                        <div class="row g-3">
+
+                            <div class="col-md-6">
+
+                                <label for="editStationCode" class="form-label">
+                                    Station Code
+                                </label>
+
+                                <input id="editStationCode" type="text" class="form-control"
+                                    [(ngModel)]="editStationCode" name="editStationCode"
+                                    [disabled]="isEditingStation()">
+
+                            </div>
+
+                            <div class="col-md-6">
+
+                                <label for="editStationName" class="form-label">
+                                    Station Name
+                                </label>
+
+                                <input id="editStationName" type="text" class="form-control"
+                                    [(ngModel)]="editStationName" name="editStationName"
+                                    [disabled]="isEditingStation()">
+
+                            </div>
+
+                        </div>
+
+                        @if (editStationError()) {
+                        <div class="form-error">
+                            {{ editStationError() }}
+                        </div>
+                        }
+
+                        <div class="form-actions">
+
+                            <button type="button" class="btn btn-outline-secondary" [disabled]="isEditingStation()"
+                                (click)="cancelEditStation()">
+                                Cancel
+                            </button>
+
+                            <button type="submit" class="btn btn-primary" [disabled]="isEditingStation()">
+
+                                @if (isEditingStation()) {
+                                Saving...
+                                } @else {
+                                Save Changes
+                                }
+
+                            </button>
+
+                        </div>
+
+                    </form>
+
+                </div>
+
+                }
+
+                @if (showAddStationForm()) {
+
+                <div class="form-card">
+
+                    <div class="form-card-header">
+                        <div>
+                            <h3>Add Station</h3>
+                            <p>Enter the details for the new station.</p>
+                        </div>
+
+                        <button type="button" class="btn btn-sm btn-outline-secondary close-form-button"
+                            [disabled]="isAddingStation()" (click)="closeAddStationForm()">
+                            Close
+                        </button>
+                    </div>
+
+                    <form (submit)="$event.preventDefault(); addStation()">
+
+                        <div class="row g-3">
+
+                            <div class="col-md-6">
+
+                                <label for="stationCode" class="form-label">
+                                    Station Code
+                                </label>
+
+                                <input id="stationCode" type="text" class="form-control" [(ngModel)]="stationCode"
+                                    name="stationCode" placeholder="e.g. NDLS" [disabled]="isAddingStation()">
+
+                            </div>
+
+                            <div class="col-md-6">
+
+                                <label for="stationName" class="form-label">
+                                    Station Name
+                                </label>
+
+                                <input id="stationName" type="text" class="form-control" [(ngModel)]="stationName"
+                                    name="stationName" placeholder="e.g. New Delhi" [disabled]="isAddingStation()">
+
+                            </div>
+
+                        </div>
+
+                        @if (addStationError()) {
+                        <div class="form-error">
+                            {{ addStationError() }}
+                        </div>
+                        }
+
+                        <div class="form-actions">
+
+                            <button type="button" class="btn btn-outline-secondary" [disabled]="isAddingStation()"
+                                (click)="closeAddStationForm()">
+                                Cancel
+                            </button>
+
+                            <button type="submit" class="btn btn-primary" [disabled]="isAddingStation()">
+
+                                @if (isAddingStation()) {
+                                Creating...
+                                } @else {
+                                Create Station
+                                }
+
+                            </button>
+
+                        </div>
+
+                    </form>
+
+                </div>
+
+                }
+
+                @if (deleteStationError()) {
+                <div class="delete-error">
+                    {{ deleteStationError() }}
+                </div>
+                }
+
+
+                @if (isStationLoading()) {
+
+                <div class="state-card">
+                    <p>Loading stations...</p>
+                </div>
+
+                } @else if (stationError()) {
+
+                <div class="state-card error-state">
+
+                    <p>{{ stationError() }}</p>
+
+                    <button type="button" class="btn btn-outline-primary" (click)="loadStations()">
+                        Try Again
+                    </button>
+
+                </div>
+
+                } @else if (stations().length === 0) {
+
+                <div class="state-card">
+
+                    <h3>No stations found</h3>
+
+                    <p>
+                        There are currently no stations available in the system.
+                    </p>
+
+                </div>
+
+                } @else {
+
+                <div class="table-card">
+
+                    <div class="table-responsive">
+
+                        <table class="table admin-table mb-0">
+
+                            <thead>
+                                <tr>
+                                    <th>Station Code</th>
+                                    <th>Station Name</th>
+                                    <th class="actions-column">Actions</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+
+                                @for (station of stations(); track station.id) {
+
+                                <tr>
+
+                                    <td>
+                                        <span class="train-number">
+                                            {{ station.code }}
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        {{ station.name }}
+                                    </td>
+
+                                    <td class="actions-column">
+
+                                        <button type="button" class="btn btn-sm btn-outline-primary"
+                                            (click)="startEditStation(station)">
+                                            Edit
+                                        </button>
+
+                                        <button type="button" class="btn btn-sm btn-outline-danger"
+                                            [disabled]="deletingStationId() === station.id"
+                                            (click)="deleteStation(station)">
+
+                                            @if (deletingStationId() === station.id) {
+                                            Deleting...
+                                            } @else {
+                                            Delete
+                                            }
+
+                                        </button>
+
+                                    </td>
+
+                                </tr>
+
+                                }
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+                }
+
+            </section>
+
+        </div>
+
+    </div>
+
+</section>

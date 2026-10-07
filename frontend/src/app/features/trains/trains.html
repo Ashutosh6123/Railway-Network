@@ -1,0 +1,469 @@
+<section class="trains-page">
+    <div class="container">
+
+        @if (isTrainSearchMode()) {
+        <div class="specific-train-search">
+            <div class="specific-train-search-header">
+                <span class="results-label">Train Lookup</span>
+
+                <h1>Find a Train</h1>
+
+                <p>
+                    Search by train number or train name to view its route.
+                </p>
+            </div>
+
+            <div class="specific-train-search-form">
+                <div class="search-input-wrapper">
+                    <label for="trainSearch" class="form-label">
+                        Train number or name
+                    </label>
+
+                    <input id="trainSearch" type="text" class="form-control"
+                        placeholder="e.g. 12345 or Rajdhani Express" [(ngModel)]="trainSearchTerm"
+                        (keyup.enter)="searchTrainByNameOrNumber()" />
+                </div>
+
+                <button type="button" class="btn btn-primary" [disabled]="isTrainSearchLoading()"
+                    (click)="searchTrainByNameOrNumber()">
+                    @if (isTrainSearchLoading()) {
+                    <span class="spinner-border spinner-border-sm me-2" aria-hidden="true">
+                    </span>
+                    Searching...
+                    } @else {
+                    Search Train
+                    }
+                </button>
+            </div>
+
+            @if (trainSearchError()) {
+            <div class="alert alert-danger mt-3 mb-0">
+                {{ trainSearchError() }}
+            </div>
+            }
+        </div>
+        }
+
+        @if (!isTrainSearchMode() || trains().length > 0) {
+        <div class="results-header">
+            <div>
+                @if (isTrainSearchMode()) {
+                <span class="results-label">Train Lookup</span>
+
+                <h1>Train Search Result</h1>
+
+                <p class="results-summary">
+                    Search results for
+                    <strong>"{{ trainSearchTerm }}"</strong>
+                </p>
+                } @else {
+                <span class="results-label">Train Search</span>
+
+                <h1>Available Trains</h1>
+
+                <p class="results-summary">
+                    {{ fromStationName }} → {{ toStationName }}
+
+                    @if (journeyDate) {
+                    <span> · {{ journeyDate }}</span>
+                    }
+                </p>
+                }
+            </div>
+
+            @if (!isTrainSearchMode()) {
+            <a routerLink="/" class="btn btn-outline-primary">
+                Modify Search
+            </a>
+            }
+        </div>
+        }
+
+        @if (isLoading()) {
+        <div class="state-card">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">
+                    Loading...
+                </span>
+            </div>
+
+            <p>Searching for available trains...</p>
+        </div>
+        }
+
+        @if (errorMessage()) {
+        <div class="alert alert-danger">
+            {{ errorMessage() }}
+        </div>
+        }
+
+        @if (
+        !isLoading() &&
+        !errorMessage() &&
+        trains().length === 0
+        ) {
+        <div class="state-card">
+            <h2>No trains found</h2>
+
+            <p>
+                We couldn't find any trains for the selected route.
+            </p>
+
+            <a routerLink="/" class="btn btn-primary">
+                Search Again
+            </a>
+        </div>
+        }
+
+        @if (
+        !isLoading() &&
+        !errorMessage() &&
+        trains().length > 0
+        ) {
+        <div class="results-count">
+            {{ trains().length }}
+            {{ trains().length === 1 ? 'train' : 'trains' }}
+            found
+        </div>
+
+        <div class="train-list">
+
+            @for (train of trains(); track train.id) {
+
+            <article class="train-card">
+
+                <div class="train-info">
+                    <div class="train-icon">
+                        🚆
+                    </div>
+
+                    <div>
+                        <h2>{{ train.name }}</h2>
+
+                        <p class="train-number">
+                            Train No. {{ train.trainNumber }}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="train-action">
+                    <button type="button" class="btn btn-primary" (click)="viewTrain(train)">
+                        View Details
+                    </button>
+                </div>
+
+            </article>
+
+            @if (selectedTrain()?.id === train.id) {
+
+            <div class="route-card">
+
+                @if (isRouteLoading()) {
+
+                <div class="route-loading">
+                    <div class="spinner-border spinner-border-sm text-primary" role="status">
+                    </div>
+
+                    <span>
+                        Loading route details...
+                    </span>
+                </div>
+
+                }
+
+                @if (routeError()) {
+
+                <div class="alert alert-danger mb-0">
+                    {{ routeError() }}
+                </div>
+
+                }
+
+                @if (
+                !isRouteLoading() &&
+                !routeError() &&
+                routeStops().length > 0
+                ) {
+
+                <div class="route-header">
+                    <div>
+                        <h3>{{ train.name }}</h3>
+
+                        <p>
+                            Train No. {{ train.trainNumber }}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="journey-summary">
+
+                    <div class="journey-point">
+                        <span class="journey-time">
+                            {{
+                            routeStops()
+                            .find(stop => stop.stationId === fromStationId)
+                            ?.departureTime
+                            }}
+                        </span>
+
+                        <span class="journey-station">
+                            {{
+                            routeStops()
+                            .find(stop => stop.stationId === fromStationId)
+                            ?.stationName
+                            }}
+                        </span>
+                    </div>
+
+                    <div class="journey-line">
+                        <span></span>
+                    </div>
+
+                    <div class="journey-point journey-point-end">
+                        <span class="journey-time">
+                            {{
+                            routeStops()
+                            .find(stop => stop.stationId === toStationId)
+                            ?.arrivalTime
+                            }}
+                        </span>
+
+                        <span class="journey-station">
+                            {{
+                            routeStops()
+                            .find(stop => stop.stationId === toStationId)
+                            ?.stationName
+                            }}
+                        </span>
+                    </div>
+
+                </div>
+
+                <div class="route-list">
+
+                    <h4>Route</h4>
+
+                    @for (
+                    stop of routeStops();
+                    track stop.id
+                    ) {
+
+                    <div class="route-stop">
+
+                        <div class="route-stop-order">
+                            {{ stop.stopOrder }}
+                        </div>
+
+                        <div class="route-stop-info">
+                            <strong>
+                                {{ stop.stationName }}
+                            </strong>
+
+                            <span>
+                                {{ stop.stationCode }}
+                            </span>
+                        </div>
+
+                        <div class="route-stop-time">
+                            <span>
+                                Arrival {{ stop.arrivalTime }}
+                            </span>
+
+                            <span>
+                                Departure {{ stop.departureTime }}
+                            </span>
+                        </div>
+
+                    </div>
+
+                    }
+
+                </div>
+
+                }
+
+            </div>
+
+            @if (!isTrainSearchMode()) {
+            <div class="availability-section">
+
+                <div class="availability-header">
+                    <div>
+                        <h4>Check Availability</h4>
+
+                        <p>
+                            Select a coach type to see available seats.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="availability-controls">
+
+                    <div class="coach-select">
+                        <label for="coachType" class="form-label">
+                            Coach Type
+                        </label>
+
+                        <select id="coachType" class="form-select" [value]="selectedCoachType() ?? ''" (change)="
+                                selectCoachType(
+                                    +$any($event.target).value
+                                )
+                                ">
+
+                            <option value="" disabled>
+                                Select coach type
+                            </option>
+
+                            <option value="0">
+                                General
+                            </option>
+
+                            <option value="1">
+                                Sleeper
+                            </option>
+
+                            <option value="2">
+                                AC 3 Tier
+                            </option>
+
+                            <option value="3">
+                                AC 2 Tier
+                            </option>
+
+                            <option value="4">
+                                AC 1 Tier
+                            </option>
+
+                        </select>
+                    </div>
+
+                    <button type="button" class="btn btn-primary availability-button" [disabled]="
+                                selectedCoachType() === null ||
+                                isAvailabilityLoading()
+                            " (click)="checkAvailability()">
+
+                        @if (isAvailabilityLoading()) {
+                        <span class="spinner-border spinner-border-sm me-2" aria-hidden="true">
+                        </span>
+
+                        Checking...
+                        } @else {
+                        Check Availability
+                        }
+                    </button>
+
+                </div>
+
+                @if (isFareLoading()) {
+                <div class="fare-loading">
+                    <span class="spinner-border spinner-border-sm text-primary" aria-hidden="true">
+                    </span>
+
+                    <span>Loading fare...</span>
+                </div>
+                }
+
+                @if (fareError()) {
+                <div class="alert alert-danger mt-3 mb-0">
+                    {{ fareError() }}
+                </div>
+                }
+
+                @if (!isFareLoading() && !fareError() && selectedFare() !== null) {
+                <div class="fare-result">
+                    <span class="fare-label">Fare</span>
+
+                    <strong>
+                        ₹{{ selectedFare() }}
+                    </strong>
+                </div>
+                }
+
+                @if (availabilityError()) {
+                <div class="alert alert-danger mt-3 mb-0">
+                    {{ availabilityError() }}
+                </div>
+                }
+
+                @if (
+                !isAvailabilityLoading() &&
+                !availabilityError() &&
+                availableSeats() !== null
+                ) {
+                <div class="availability-result">
+
+                    <div>
+                        @if (availableSeats()! > 0) {
+                        <span class="availability-label">
+                            Available seats
+                        </span>
+
+                        <strong>
+                            {{ availableSeats() }}
+                        </strong>
+                        } @else {
+                        <span class="availability-label">
+                            Available seats
+                        </span>
+
+                        <strong>
+                            0
+                        </strong>
+                        }
+                    </div>
+
+                    @if (availableSeats()! > 0) {
+                    <span class="availability-status available">
+                        Available
+                    </span>
+                    } @else {
+                    <span class="availability-status unavailable">
+                        Currently full
+                    </span>
+                    }
+
+                </div>
+
+                @if (availableSeats()! === 0) {
+                <div class="waitlist-message">
+                    <div>
+                        <h5>No seats currently available</h5>
+
+                        <p>
+                            This coach is currently full, but you can still
+                            continue and join the waiting list.
+                        </p>
+                    </div>
+
+                    <button type="button" class="btn btn-outline-primary" (click)="joinWaitingList()">
+                        Join Waiting List
+                    </button>
+                </div>
+                } @else {
+                    <!-- <div class="booking-action">
+                        <button type="button" class="btn btn-primary" (click)="bookTicket()">
+                            Book Ticket
+                        </button>
+                    </div> -->
+                    @if (selectedFare() !== null) {
+                    <div class="booking-action">
+                        <button type="button" class="btn btn-primary" (click)="bookTicket()">
+                            Book Ticket
+                        </button>
+                    </div>
+                    }
+                }
+                }
+
+            </div>
+            }
+
+            }
+
+            }
+
+        </div>
+        }
+
+    </div>
+</section>

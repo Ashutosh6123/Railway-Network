@@ -1,0 +1,141 @@
+.confirmation-page {
+  min-height: calc(100vh - 70px);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.confirmation-card {
+  width: 100%;
+  max-width: 720px;
+  padding: 40px;
+  background-color: var(--rr-surface);
+  border: 1px solid var(--rr-border);
+  border-radius: var(--rr-radius-lg);
+  box-shadow: var(--rr-shadow-sm);
+  text-align: center;
+}
+
+.confirmation-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background-color: #d1e7dd;
+  color: #146c43;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.confirmation-card h1 {
+  margin-bottom: 8px;
+  font-size: 1.8rem;
+  font-weight: 700;
+}
+
+.confirmation-message {
+  margin-bottom: 28px;
+  color: var(--rr-text-muted);
+}
+
+.pnr-section {
+  padding: 20px;
+  margin-bottom: 24px;
+  border: 1px solid var(--rr-border);
+  border-radius: var(--rr-radius-md);
+  background-color: var(--rr-bg);
+}
+
+.pnr-section span {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--rr-text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+.pnr-section strong {
+  font-size: 1.5rem;
+  letter-spacing: 0.08em;
+}
+
+.booking-details {
+  border-top: 1px solid var(--rr-border);
+  border-bottom: 1px solid var(--rr-border);
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 16px 0;
+  text-align: left;
+}
+
+.detail-row span {
+  color: var(--rr-text-muted);
+}
+
+.status-confirmed {
+  color: #146c43;
+}
+
+.passenger-section {
+  margin-top: 28px;
+  text-align: left;
+}
+
+.passenger-section h2 {
+  margin-bottom: 16px;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.passenger-card {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 20px;
+  padding: 18px;
+  border: 1px solid var(--rr-border);
+  border-radius: var(--rr-radius-md);
+}
+
+.detail-label {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--rr-text-muted);
+  font-size: 0.78rem;
+}
+
+.passenger-card strong {
+  font-size: 0.95rem;
+}
+
+.confirmation-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 30px;
+}
+
+@media (max-width: 576px) {
+  .confirmation-card {
+    padding: 28px 20px;
+  }
+
+  .passenger-card {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .confirmation-actions {
+    flex-direction: column;
+  }
+
+  .confirmation-actions .btn {
+    width: 100%;
+  }
+}

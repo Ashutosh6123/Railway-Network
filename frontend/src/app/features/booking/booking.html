@@ -1,0 +1,225 @@
+@if (bookingResponse()) {
+<section class="booking-success">
+    <div class="success-icon">
+        ✓
+    </div>
+
+    <h1>Booking Confirmed</h1>
+
+    <p class="success-message">
+        Your railway ticket has been booked successfully.
+    </p>
+
+    <div class="pnr-card">
+        <span class="pnr-label">PNR</span>
+        <strong>{{ bookingResponse()!.pnr }}</strong>
+    </div>
+
+    <div class="booking-summary">
+        <div>
+            <span>Status</span>
+            <strong>Confirmed</strong>
+        </div>
+
+        <div>
+            <span>Total Fare</span>
+            <strong>₹{{ bookingResponse()!.totalFare }}</strong>
+        </div>
+    </div>
+
+    <div class="confirmation-actions">
+        <button type="button" class="btn btn-primary" routerLink="/bookings">
+            View My Bookings
+        </button>
+
+        <button type="button" class="btn btn-outline-secondary" routerLink="/">
+            Back to Home
+        </button>
+    </div>
+</section>
+}
+@else {<section class="booking-page">
+    <div class="container py-5">
+
+        <div class="booking-header">
+            <h1>Complete Your Booking</h1>
+            <p>Review your journey details before adding passengers.</p>
+        </div>
+
+        <div class="journey-card">
+
+            <div class="journey-card-header">
+                <div>
+                    <span class="section-label">JOURNEY DETAILS</span>
+                    <h2>Your Trip</h2>
+                </div>
+            </div>
+
+            <div class="journey-details">
+
+                <div class="journey-detail">
+                    <span class="detail-label">From Station Name</span>
+                    <strong>{{ fromStationName }}</strong>
+                </div>
+
+                <div class="journey-arrow">
+                    →
+                </div>
+
+                <div class="journey-detail">
+                    <span class="detail-label">To Station Name</span>
+                    <strong>{{ toStationName }}</strong>
+                </div>
+
+                <div class="journey-detail">
+                    <span class="detail-label">Journey Date</span>
+                    <strong>{{ journeyDate }}</strong>
+                </div>
+
+                <div class="journey-detail">
+                    <span class="detail-label">Coach Type</span>
+                    <strong>{{ getCoachTypeName() }}</strong>
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="booking-section">
+            <div class="section-heading">
+                <h2>Booking Preferences</h2>
+                <p>Select your quota before entering passenger details.</p>
+            </div>
+
+            <div class="form-group">
+                <label for="quota" class="form-label">Quota</label>
+
+                <select id="quota" class="form-select" [(ngModel)]="selectedQuota">
+                    <option value="General">General</option>
+                    <option value="Ladies">Ladies</option>
+                </select>
+            </div>
+        </div>
+
+
+        <div class="passenger-card">
+
+            <div class="passenger-card-header">
+                <div>
+                    <span class="section-label">PASSENGER DETAILS</span>
+                    <h2>Passengers</h2>
+                    <p>Add the details of everyone travelling on this booking.</p>
+                </div>
+
+                <span class="passenger-count">
+                    {{ passengers.length }} / 6
+                </span>
+            </div>
+
+            @for (passenger of passengers; track $index; let i = $index) {
+            <div class="passenger-item">
+
+                <div class="passenger-item-header">
+                    <h3>Passenger {{ i + 1 }}</h3>
+
+                    @if (passengers.length > 1) {
+                    <button type="button" class="btn btn-outline-danger btn-sm" (click)="removePassenger(i)">
+                        Remove
+                    </button>
+                    }
+                </div>
+
+                <div class="row g-3">
+
+                    <div class="col-12">
+                        <label [for]="'passengerName' + i" class="form-label">
+                            Full Name
+                        </label>
+
+                        <input [id]="'passengerName' + i" type="text" class="form-control" [(ngModel)]="passenger.name"
+                            placeholder="Enter passenger name" />
+                        @if (passenger.name.trim().length === 0) {
+                        <div class="validation-message">
+                            Name is required.
+                        </div>
+                        }
+                    </div>
+
+                    <div class="col-md-6">
+                        <label [for]="'passengerAge' + i" class="form-label">
+                            Age
+                        </label>
+
+                        <input [id]="'passengerAge' + i" type="number" class="form-control" [(ngModel)]="passenger.age"
+                            min="1" max="120" placeholder="Enter age" />
+                        @if (passenger.age === null || passenger.age <= 0) { <div class="validation-message">
+                            Enter a valid age.
+                    </div>
+                    }
+                </div>
+
+                <div class="col-md-6">
+                    <label [for]="'passengerGender' + i" class="form-label">
+                        Gender
+                    </label>
+
+                    <select [id]="'passengerGender' + i" class="form-select" [(ngModel)]="passenger.gender">
+                        <option value="">Select gender</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                    </select>
+                    @if (passenger.gender === '') {
+                    <div class="validation-message">
+                        Select a gender.
+                    </div>
+                    }
+                </div>
+
+                <div class="col-12">
+                    <label [for]="'passengerAddress' + i" class="form-label">
+                        Address
+                    </label>
+
+                    <textarea [id]="'passengerAddress' + i" class="form-control" [(ngModel)]="passenger.address"
+                        rows="2" placeholder="Enter passenger address"></textarea>
+                    @if (passenger.address.trim().length === 0) {
+                    <div class="validation-message">
+                        Address is required.
+                    </div>
+                    }
+                </div>
+
+            </div>
+
+        </div>
+
+        @if (selectedQuota === 'Ladies' && !arePassengersValidForQuota()) {
+        <div class="quota-warning">
+            Ladies quota requires all passengers to be female.
+        </div>
+        }
+
+        }
+
+        <div class="passenger-actions">
+            <button type="button" class="btn btn-outline-primary" (click)="addPassenger()" [disabled]="
+                    passengers.length >= 6 ||
+                    !isPassengerComplete(passengers[passengers.length - 1])">
+                + Add Passenger
+            </button>
+        </div>
+
+        <div class="booking-actions">
+            <button type="button" class="btn btn-primary" [disabled]="!isBookingValid() || isBookingProcessing()"
+                (click)="submitBooking()">
+
+                Proceed to Payment
+            </button>
+        </div>
+
+    </div>
+
+    </div>
+</section>
+}

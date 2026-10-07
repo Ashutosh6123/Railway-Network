@@ -1,0 +1,267 @@
+<section class="pnr-page container py-5">
+
+  <header class="page-header">
+    <span class="page-eyebrow">BOOKING STATUS</span>
+    <h1>Check PNR Status</h1>
+    <p>
+      Enter your PNR number to view the latest status of your railway booking.
+    </p>
+  </header>
+
+  <section class="pnr-search-card">
+
+    <div class="search-content">
+      <label for="pnr" class="form-label">
+        PNR Number
+      </label>
+
+      <div class="search-row">
+        <input
+          id="pnr"
+          type="text"
+          class="form-control"
+          placeholder="Enter your PNR number"
+          maxlength="20"
+          [(ngModel)]="pnr"
+          (keyup.enter)="checkPnr()">
+
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="checkPnr()"
+          [disabled]="isLoading()">
+
+          @if (isLoading()) {
+            <span
+              class="spinner-border spinner-border-sm me-2"
+              aria-hidden="true">
+            </span>
+            Checking...
+          } @else {
+            Check PNR
+          }
+
+        </button>
+      </div>
+
+      @if (errorMessage()) {
+        <div class="alert alert-danger mt-3 mb-0">
+          {{ errorMessage() }}
+        </div>
+      }
+
+    </div>
+
+  </section>
+
+
+  <!-- Logged-out result -->
+
+  @if (publicPnrResult(); as result) {
+
+    <section class="result-card">
+
+      <div class="result-header">
+        <div>
+          <span class="detail-label">PNR</span>
+          <strong class="pnr-number">{{ result.pnr }}</strong>
+        </div>
+
+        <span
+          class="status-badge"
+          [class.status-confirmed]="result.status === 0"
+          [class.status-waitlisted]="result.status === 1"
+          [class.status-cancelled]="result.status === 2">
+
+          {{ getStatusName(result.status) }}
+
+        </span>
+      </div>
+
+      <div class="result-info">
+
+        <div>
+          <span class="detail-label">Journey Date</span>
+          <strong>
+            {{ result.journeyDate | date:'d MMM yyyy' }}
+          </strong>
+        </div>
+
+      </div>
+
+      <div class="result-footer">
+        <span>
+          Sign in to view complete booking details.
+        </span>
+
+        <a
+          routerLink="/login"
+          [queryParams]="{ returnUrl: '/pnr' }"
+          class="btn btn-outline-primary btn-sm">
+
+          Login
+
+        </a>
+      </div>
+
+    </section>
+
+  }
+
+
+  <!-- Logged-in detailed result -->
+
+  @if (bookingResult(); as booking) {
+
+    <section class="result-card detailed-result">
+
+      <div class="result-header">
+
+        <div>
+          <span class="detail-label">PNR</span>
+          <strong class="pnr-number">{{ booking.pnr }}</strong>
+        </div>
+
+        <span
+          class="status-badge"
+          [class.status-confirmed]="booking.status === 0"
+          [class.status-waitlisted]="booking.status === 1"
+          [class.status-cancelled]="booking.status === 2">
+
+          {{ getStatusName(booking.status) }}
+
+        </span>
+
+      </div>
+
+
+      <div class="journey-section">
+
+        <div class="station">
+          <span>FROM</span>
+          <strong>{{ getStationName(booking.fromStationId) }}</strong>
+        </div>
+
+        <div class="journey-arrow">→</div>
+
+        <div class="station">
+          <span>TO</span>
+          <strong>{{ getStationName(booking.toStationId) }}</strong>
+        </div>
+
+      </div>
+
+
+      <div class="booking-info">
+
+        <div>
+          <span class="detail-label">Journey Date</span>
+          <strong>
+            {{ booking.journeyDate | date:'d MMM yyyy' }}
+          </strong>
+        </div>
+
+        <div>
+          <span class="detail-label">Coach</span>
+          <strong>
+            {{ getCoachTypeName(booking.coachType) }}
+          </strong>
+        </div>
+
+        <div>
+          <span class="detail-label">Quota</span>
+          <strong>
+            {{ getQuotaName(booking.quota) }}
+          </strong>
+        </div>
+
+        <div>
+          <span class="detail-label">Total Fare</span>
+          <strong>
+            ₹{{ booking.totalFare | number:'1.2-2' }}
+          </strong>
+        </div>
+
+      </div>
+
+
+      <div class="passenger-section">
+
+        <h2>Passengers</h2>
+
+        @for (
+          passenger of booking.passengers;
+          track passenger.bookingPassengerId
+        ) {
+
+          <div class="passenger-row">
+
+            <div>
+              <span class="detail-label">Passenger</span>
+              <strong>{{ passenger.name }}</strong>
+            </div>
+
+            <div>
+              <span class="detail-label">Coach</span>
+              <strong>{{ passenger.coachNumber }}</strong>
+            </div>
+
+            <div>
+              <span class="detail-label">Seat</span>
+              <strong>{{ passenger.seatNumber }}</strong>
+            </div>
+
+          </div>
+
+        }
+
+      </div>
+
+
+      @if (booking.waitlistPosition !== null) {
+
+        <div class="waitlist-info">
+          Waitlist Position:
+          <strong>{{ booking.waitlistPosition }}</strong>
+        </div>
+
+      }
+
+
+      <div class="result-footer">
+
+        <span>
+          This booking belongs to your account.
+        </span>
+
+        <a
+          routerLink="/my-bookings"
+          class="btn btn-outline-primary btn-sm">
+
+          My Bookings
+
+        </a>
+
+      </div>
+
+    </section>
+
+  }
+
+
+  @if (publicPnrResult() || bookingResult()) {
+
+    <div class="new-search">
+      <button
+        type="button"
+        class="btn btn-outline-secondary"
+        (click)="clearResult()">
+
+        Check Another PNR
+
+      </button>
+    </div>
+
+  }
+
+</section>
