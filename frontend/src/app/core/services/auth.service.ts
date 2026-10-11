@@ -37,6 +37,9 @@ export class AuthService {
   private readonly loggedIn = signal(
     !!localStorage.getItem(this.tokenKey)
   );
+  private readonly role = signal<string | null>(
+    localStorage.getItem(this.roleKey)
+  );
 
   login(request: LoginRequest): Observable<LoginResponse> {
     return this.http
@@ -51,12 +54,12 @@ export class AuthService {
       );
   }
 
-    register(request: RegisterRequest): Observable<void> {
-        return this.http.post<void>(
-            `${this.apiUrl}/register`,
-            request
-        );
-    }
+  register(request: RegisterRequest): Observable<void> {
+      return this.http.post<void>(
+          `${this.apiUrl}/register`,
+          request
+      );
+  }
 
   private storeAuthentication(
     response: LoginResponse
@@ -76,6 +79,8 @@ export class AuthService {
       response.role
     );
     this.loggedIn.set(true);
+
+    this.role.set(response.role);
   }
 
   isLoggedIn(): boolean {
@@ -99,13 +104,14 @@ export class AuthService {
   }
 
   getRole(): string | null {
-    return localStorage.getItem(this.roleKey);
+    return this.role();
   }
 
   logout(): void {
     localStorage.removeItem(this.tokenKey);
     localStorage.removeItem(this.userIdKey);
     localStorage.removeItem(this.roleKey);
+    this.role.set(null);
     this.loggedIn.set(false);
   }
 }

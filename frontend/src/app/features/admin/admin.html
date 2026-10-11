@@ -253,6 +253,11 @@
                                         Coaches
                                     </button>
 
+                                    <button type="button" class="btn btn-sm btn-outline-secondary"
+                                        (click)="viewFares(train)">
+                                        Fares
+                                    </button>
+
                                     <button type="button" class="btn btn-sm btn-outline-primary"
                                         (click)="startEditTrain(train)">
                                         Edit
@@ -281,6 +286,208 @@
                 </div>
 
             </div>
+            }
+
+            @if (selectedFareTrain(); as train) {
+            <section class="management-section">
+
+                <div class="section-header">
+                    <div>
+                        <h2>Fare Management</h2>
+                        <p>
+                            Manage fares for
+                            <strong>{{ train.trainNumber }} — {{ train.name }}</strong>.
+                        </p>
+                    </div>
+
+                    <div class="section-actions">
+                        <button type="button" class="btn btn-primary" (click)="openAddFareForm()">
+                            + Add Fare
+                        </button>
+
+                        <button type="button" class="btn btn-outline-secondary" [disabled]="isSavingFare()"
+                            (click)="closeFares()">
+                            Close
+                        </button>
+                    </div>
+                </div>
+
+                @if (showFareForm()) {
+                <div class="form-card">
+                    <div class="form-card-header">
+                        <div>
+                            <h3>
+                                {{ editingFareId() === null ? 'Add Fare' : 'Edit Fare' }}
+                            </h3>
+                            <p>Configure the fare for a station segment and coach type.</p>
+                        </div>
+
+                        <button type="button" class="btn btn-sm btn-outline-secondary" [disabled]="isSavingFare()"
+                            (click)="cancelFareForm()">
+                            Close
+                        </button>
+                    </div>
+
+                    <form (submit)="$event.preventDefault(); saveFare()">
+                        <div class="row g-3">
+
+                            <div class="col-md-6">
+                                <label for="fareFromStation" class="form-label">
+                                    From Station
+                                </label>
+
+                                <select id="fareFromStation" class="form-select" [(ngModel)]="fareFromStationId"
+                                    name="fareFromStation" [disabled]="isSavingFare()">
+                                    <option [ngValue]="null">Select source station</option>
+
+                                    @for (station of stations(); track station.id) {
+                                    <option [ngValue]="station.id">
+                                        {{ station.code }} — {{ station.name }}
+                                    </option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="fareToStation" class="form-label">
+                                    To Station
+                                </label>
+
+                                <select id="fareToStation" class="form-select" [(ngModel)]="fareToStationId"
+                                    name="fareToStation" [disabled]="isSavingFare()">
+                                    <option [ngValue]="null">Select destination station</option>
+
+                                    @for (station of stations(); track station.id) {
+                                    <option [ngValue]="station.id">
+                                        {{ station.code }} — {{ station.name }}
+                                    </option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="fareCoachType" class="form-label">
+                                    Coach Type
+                                </label>
+
+                                <select id="fareCoachType" class="form-select" [(ngModel)]="fareCoachType"
+                                    name="fareCoachType" [disabled]="isSavingFare()">
+                                    <option [ngValue]="null">Select coach type</option>
+                                    <option [ngValue]="0">General</option>
+                                    <option [ngValue]="1">Sleeper</option>
+                                    <option [ngValue]="2">AC 3 Tier</option>
+                                    <option [ngValue]="3">AC 2 Tier</option>
+                                    <option [ngValue]="4">AC 1 Tier</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="fareAmount" class="form-label">
+                                    Fare Amount (₹)
+                                </label>
+
+                                <input id="fareAmount" type="number" class="form-control" min="0.01" step="0.01"
+                                    [(ngModel)]="fareAmount" name="fareAmount" placeholder="Enter fare amount"
+                                    [disabled]="isSavingFare()" />
+                            </div>
+
+                        </div>
+
+                        @if (fareFormError()) {
+                        <div class="form-error">
+                            {{ fareFormError() }}
+                        </div>
+                        }
+
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-outline-secondary" [disabled]="isSavingFare()"
+                                (click)="cancelFareForm()">
+                                Cancel
+                            </button>
+
+                            <button type="submit" class="btn btn-primary" [disabled]="isSavingFare()">
+                                @if (isSavingFare()) {
+                                Saving...
+                                } @else {
+                                {{ editingFareId() === null ? 'Add Fare' : 'Save Changes' }}
+                                }
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                }
+
+                @if (deleteFareError()) {
+                <div class="delete-error">
+                    {{ deleteFareError() }}
+                </div>
+                }
+
+                @if (isFareLoading()) {
+                <div class="state-card">
+                    <p>Loading fares...</p>
+                </div>
+                } @else if (fareError()) {
+                <div class="state-card error-state">
+                    <p>{{ fareError() }}</p>
+
+                    <button type="button" class="btn btn-outline-primary" (click)="loadFares(train.id)">
+                        Try Again
+                    </button>
+                </div>
+                } @else if (fares().length === 0) {
+                <div class="state-card">
+                    <h3>No fares found</h3>
+                    <p>No fares have been configured for this train yet.</p>
+                </div>
+                } @else {
+                <div class="table-card">
+                    <div class="table-responsive">
+                        <table class="table admin-table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>From</th>
+                                    <th>To</th>
+                                    <th>Coach Type</th>
+                                    <th>Amount</th>
+                                    <th class="actions-column">Actions</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                @for (fare of fares(); track fare.id) {
+                                <tr>
+                                    <td>{{ getStationLabel(fare.fromStationId) }}</td>
+                                    <td>{{ getStationLabel(fare.toStationId) }}</td>
+                                    <td>{{ getFareCoachTypeName(fare.coachType) }}</td>
+                                    <td>₹{{ fare.amount | number:'1.2-2' }}</td>
+
+                                    <td class="actions-cell">
+                                        <button type="button" class="btn btn-sm btn-outline-primary"
+                                            [disabled]="isSavingFare() || deletingFareId() !== null"
+                                            (click)="startEditFare(fare)">
+                                            Edit
+                                        </button>
+
+                                        <button type="button" class="btn btn-sm btn-outline-danger"
+                                            [disabled]="isSavingFare() || deletingFareId() !== null"
+                                            (click)="deleteFare(fare)">
+                                            @if (deletingFareId() === fare.id) {
+                                            Deleting...
+                                            } @else {
+                                            Delete
+                                            }
+                                        </button>
+                                    </td>
+                                </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                }
+
+            </section>
             }
 
             @if (selectedRouteTrain() !== null) {
@@ -971,7 +1178,8 @@
                                                 }
                                             </button>
 
-                                            <button type="button" class="btn btn-sm btn-outline-secondary">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                                (click)="viewSeats(coach)">
                                                 Manage Seats
                                             </button>
 
@@ -991,7 +1199,256 @@
                 }
 
             </section>
+
+
+            @if (selectedCoach(); as coach) {
+            <section class="management-section">
+
+                <div class="section-header">
+                    <div>
+                        <h2>Seat Management</h2>
+                        <p>
+                            {{ selectedCoachTrain()?.trainNumber }}
+                            —
+                            Coach {{ coach.coachNumber }}
+                            ({{ getCoachTypeName(coach.coachType) }})
+                        </p>
+                    </div>
+
+                    <div class="section-actions">
+                        <button type="button" class="btn btn-primary" (click)="openAddSeatForm()">
+                            Add Seat
+                        </button>
+
+                        <button type="button" class="btn btn-outline-secondary" (click)="closeSeats()">
+                            Close
+                        </button>
+                    </div>
+                </div>
+
+                @if (deleteSeatError()) {
+                <div class="delete-error">
+                    {{ deleteSeatError() }}
+                </div>
+                }
+
+                @if (showAddSeatForm()) {
+                <div class="form-card">
+
+                    <div class="form-card-header">
+                        <div>
+                            <h3>Add Seat</h3>
+                            <p>
+                                Add a seat to coach {{ selectedCoach()?.coachNumber }}
+                            </p>
+                        </div>
+
+                        <button type="button" class="btn btn-outline-secondary close-form-button"
+                            [disabled]="isAddingSeat()" (click)="closeAddSeatForm()">
+                            Close
+                        </button>
+                    </div>
+
+                    <form #addSeatForm="ngForm" (ngSubmit)="addSeat(addSeatForm)">
+
+                        <div class="row">
+
+                            <div class="col-md-6">
+                                <label for="seatNumber" class="form-label">
+                                    Seat Number
+                                </label>
+
+                                <input id="seatNumber" name="seatNumber" type="text" class="form-control" required
+                                    maxlength="50" ngModel #seatNumber="ngModel" />
+
+                                @if (seatNumber.invalid && seatNumber.touched) {
+                                <div class="form-error">
+                                    Seat number is required.
+                                </div>
+                                }
+                            </div>
+
+                        </div>
+
+                        @if (addSeatError()) {
+                        <div class="form-error">
+                            {{ addSeatError() }}
+                        </div>
+                        }
+
+                        <div class="form-actions">
+
+                            <button type="button" class="btn btn-outline-secondary" [disabled]="isAddingSeat()"
+                                (click)="closeAddSeatForm()">
+                                Cancel
+                            </button>
+
+                            <button type="submit" class="btn btn-primary" [disabled]="isAddingSeat()">
+                                @if (isAddingSeat()) {
+                                Adding...
+                                } @else {
+                                Add Seat
+                                }
+                            </button>
+
+                        </div>
+
+                    </form>
+                </div>
+                }
+
+                @if (isSeatLoading()) {
+
+                <div class="state-card">
+                    <p>Loading seats...</p>
+                </div>
+
+                } @else if (seatError()) {
+
+                <div class="state-card error-state">
+                    <p>{{ seatError() }}</p>
+                </div>
+
+                } @else if (seats().length === 0) {
+
+                <div class="state-card">
+                    <h3>No seats found</h3>
+                    <p>
+                        This coach currently has no seats.
+                    </p>
+                </div>
+
+                } @else {
+
+                <div class="table-card">
+                    <div class="table-responsive">
+                        <table class="table admin-table mb-0">
+
+                            <thead>
+                                <tr>
+                                    <th>Seat Number</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                @for (seat of seats(); track seat.id) {
+
+                                @if (editingSeatId() === seat.id) {
+
+                                <tr>
+                                    <td colspan="2">
+
+                                        <div class="form-card mb-0">
+
+                                            <div class="form-card-header">
+                                                <div>
+                                                    <h3>Edit Seat</h3>
+                                                    <p>
+                                                        Update seat {{ seat.seatNumber }}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            <form #editSeatForm="ngForm" (ngSubmit)="updateSeat(seat, editSeatForm)">
+
+                                                <div class="row">
+
+                                                    <div class="col-md-6">
+                                                        <label [for]="'editSeatNumber' + seat.id" class="form-label">
+                                                            Seat Number
+                                                        </label>
+
+                                                        <input [id]="'editSeatNumber' + seat.id" name="seatNumber"
+                                                            type="text" class="form-control" required maxlength="50"
+                                                            [ngModel]="seat.seatNumber" #editSeatNumber="ngModel" />
+
+                                                        @if (
+                                                        editSeatNumber.invalid &&
+                                                        editSeatNumber.touched
+                                                        ) {
+                                                        <div class="form-error">
+                                                            Seat number is required.
+                                                        </div>
+                                                        }
+                                                    </div>
+
+                                                </div>
+
+                                                @if (updateSeatError()) {
+                                                <div class="form-error">
+                                                    {{ updateSeatError() }}
+                                                </div>
+                                                }
+
+                                                <div class="form-actions">
+
+                                                    <button type="button" class="btn btn-outline-secondary"
+                                                        [disabled]="isUpdatingSeat()" (click)="cancelEditSeat()">
+                                                        Cancel
+                                                    </button>
+
+                                                    <button type="submit" class="btn btn-primary"
+                                                        [disabled]="isUpdatingSeat()">
+                                                        @if (isUpdatingSeat()) {
+                                                        Saving...
+                                                        } @else {
+                                                        Save Changes
+                                                        }
+                                                    </button>
+
+                                                </div>
+
+                                            </form>
+
+                                        </div>
+
+                                    </td>
+                                </tr>
+
+                                } @else {
+
+                                <tr>
+                                    <td>
+                                        {{ seat.seatNumber }}
+                                    </td>
+
+                                    <td>
+                                        <div class="actions-cell">
+
+                                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                                (click)="startEditSeat(seat)">
+                                                Edit
+                                            </button>
+
+                                            <button type="button" class="btn btn-sm btn-outline-danger"
+                                                [disabled]="deletingSeatId() === seat.id" (click)="deleteSeat(seat)">
+                                                @if (deletingSeatId() === seat.id) {
+                                                Deleting...
+                                                } @else {
+                                                Delete
+                                                }
+                                            </button>
+
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                }
+                                }
+                            </tbody>
+
+                        </table>
+                    </div>
+                </div>
+                }
+
+            </section>
             }
+
+            }
+
+
 
             <section class="management-section">
 

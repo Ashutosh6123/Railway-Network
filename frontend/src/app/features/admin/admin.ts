@@ -13,8 +13,17 @@ import {
   RouteStopAdminRequest,
   Coach,
   CoachRequest,
-  CoachAdminRequest
+  CoachAdminRequest,
+  SeatRequest,
+  Fare,
+  FareAdminRequest
 } from '../../core/services/admin.service';
+
+export interface Seat {
+  id: number;
+  coachId: number;
+  seatNumber: string;
+}
 
 @Component({
   selector: 'app-admin',
@@ -81,9 +90,38 @@ export class Admin implements OnInit {
   readonly deletingCoachId = signal<number | null>(null);
   readonly deleteCoachError = signal('');
 
-  showAddCoachForm = signal(false);
-  isAddingCoach = signal(false);
-  addCoachError = signal('');
+  readonly showAddCoachForm = signal(false);
+  readonly isAddingCoach = signal(false);
+  readonly addCoachError = signal('');
+
+  readonly selectedCoach = signal<Coach | null>(null);
+  readonly seats = signal<Seat[]>([]);
+  readonly isSeatLoading = signal(false);
+  readonly seatError = signal('');
+  readonly showAddSeatForm = signal(false);
+  readonly isAddingSeat = signal(false);
+  readonly addSeatError = signal('');
+  readonly editingSeatId = signal<number | null>(null);
+  readonly isUpdatingSeat = signal(false);
+  readonly updateSeatError = signal('');
+  readonly deletingSeatId = signal<number | null>(null);
+  readonly deleteSeatError = signal('');
+
+  readonly selectedFareTrain = signal<Train | null>(null);
+  readonly fares = signal<Fare[]>([]);
+  readonly isFareLoading = signal(false);
+  readonly fareError = signal('');
+  readonly showFareForm = signal(false);
+  readonly isSavingFare = signal(false);
+  readonly fareFormError = signal('');
+  readonly editingFareId = signal<number | null>(null);
+  readonly deletingFareId = signal<number | null>(null);
+  readonly deleteFareError = signal('');
+  
+  fareFromStationId: number | null = null;
+  fareToStationId: number | null = null;
+  fareCoachType: number | null = null;
+  fareAmount: number | null = null;
   
   editRouteStopStationId: number | null = null;
   editRouteStopOrder = 1;
@@ -896,5 +934,346 @@ export class Admin implements OnInit {
         );
         }
     });
+    }
+
+    viewSeats(coach: Coach) {
+        this.selectedCoach.set(coach);
+        this.seats.set([]);
+        this.seatError.set('');
+        this.isSeatLoading.set(true);
+
+        this.adminService.getSeats(coach.id).subscribe({
+            next: seats => {
+            this.seats.set(seats);
+            this.isSeatLoading.set(false);
+            },
+            error: () => {
+            this.seatError.set('Failed to load seats.');
+            this.isSeatLoading.set(false);
+            }
+        });
+    }
+    closeSeats() {
+        this.selectedCoach.set(null);
+        this.seats.set([]);
+        this.seatError.set('');
+    }
+    openAddSeatForm() {
+    this.showAddSeatForm.set(true);
+    this.addSeatError.set('');
+    }
+    closeAddSeatForm() {
+    this.showAddSeatForm.set(false);
+    this.addSeatError.set('');
+    }
+
+    addSeat(form: NgForm) {
+        const coach = this.selectedCoach();
+
+        if (!coach) {
+            return;
+        }
+
+        if (form.invalid) {
+            form.control.markAllAsTouched();
+            return;
+        }
+
+        this.isAddingSeat.set(true);
+        this.addSeatError.set('');
+
+        const request: SeatRequest = {
+            seatNumber: form.value.seatNumber.trim()
+        };
+
+        this.adminService.createSeat(coach.id, request).subscribe({
+            next: () => {
+            this.adminService.getSeats(coach.id).subscribe({
+                next: seats => {
+                this.seats.set(seats);
+                this.showAddSeatForm.set(false);
+                this.isAddingSeat.set(false);
+                form.resetForm();
+                },
+                error: () => {
+                this.isAddingSeat.set(false);
+                this.addSeatError.set(
+                    'Seat was added, but the seat list could not be refreshed.'
+                );
+                }
+            });
+            },
+            error: error => {
+            this.isAddingSeat.set(false);
+
+            this.addSeatError.set(
+                error?.error?.message || 'Failed to add seat.'
+            );
+            }
+        });
+    }
+
+    startEditSeat(seat: Seat) {
+        this.editingSeatId.set(seat.id);
+        this.updateSeatError.set('');
+    }
+    cancelEditSeat() {
+        this.editingSeatId.set(null);
+        this.updateSeatError.set('');
+    }
+
+    updateSeat(seat: Seat, form: NgForm) {
+        const coach = this.selectedCoach();
+
+        if (!coach) {
+            return;
+        }
+
+        if (form.invalid) {
+            form.control.markAllAsTouched();
+            return;
+        }
+
+        this.isUpdatingSeat.set(true);
+        this.updateSeatError.set('');
+
+        const request: SeatRequest = {
+            seatNumber: form.value.seatNumber.trim()
+        };
+
+        this.adminService.updateSeat(seat.id, request).subscribe({
+            next: () => {
+            this.adminService.getSeats(coach.id).subscribe({
+                next: seats => {
+                this.seats.set(seats);
+                this.editingSeatId.set(null);
+                this.isUpdatingSeat.set(false);
+                },
+                error: () => {
+                this.isUpdatingSeat.set(false);
+                this.updateSeatError.set(
+                    'Seat was updated, but the seat list could not be refreshed.'
+                );
+                }
+            });
+            },
+            error: error => {
+            this.isUpdatingSeat.set(false);
+
+            this.updateSeatError.set(
+                error?.error?.message || 'Failed to update seat.'
+            );
+            }
+        });
+    }
+    deleteSeat(seat: Seat) {
+        const confirmed = window.confirm(
+            `Are you sure you want to delete seat ${seat.seatNumber}?`
+        );
+
+        if (!confirmed) {
+            return;
+        }
+
+        this.deletingSeatId.set(seat.id);
+        this.deleteSeatError.set('');
+
+        this.adminService.deleteSeat(seat.id).subscribe({
+            next: () => {
+            this.seats.update(seats =>
+                seats.filter(s => s.id !== seat.id)
+            );
+
+            this.deletingSeatId.set(null);
+            },
+            error: error => {
+            this.deletingSeatId.set(null);
+
+            this.deleteSeatError.set(
+                error?.error?.message || 'Failed to delete seat.'
+            );
+            }
+        });
+    }
+
+    viewFares(train: Train): void {
+    this.selectedFareTrain.set(train);
+    this.fares.set([]);
+    this.fareError.set('');
+    this.showFareForm.set(false);
+    this.loadFares(train.id);
+    }
+
+    loadFares(trainId: number): void {
+    this.isFareLoading.set(true);
+    this.fareError.set('');
+
+    this.adminService.getFares(trainId).subscribe({
+        next: fares => {
+        this.fares.set(fares);
+        this.isFareLoading.set(false);
+        },
+        error: error => {
+        console.error('LOAD FARES ERROR:', error);
+        this.fareError.set(
+            error?.error?.message || 'Failed to load fares.'
+        );
+        this.isFareLoading.set(false);
+        }
+    });
+    }
+
+    closeFares(): void {
+    if (this.isSavingFare()) {
+        return;
+    }
+
+    this.selectedFareTrain.set(null);
+    this.fares.set([]);
+    this.showFareForm.set(false);
+    this.editingFareId.set(null);
+    this.fareError.set('');
+    this.fareFormError.set('');
+    this.deleteFareError.set('');
+    }
+
+    openAddFareForm(): void {
+    this.editingFareId.set(null);
+    this.fareFromStationId = null;
+    this.fareToStationId = null;
+    this.fareCoachType = null;
+    this.fareAmount = null;
+    this.fareFormError.set('');
+    this.showFareForm.set(true);
+    }
+
+    startEditFare(fare: Fare): void {
+        console.log('Edit clicked:', fare);
+        this.editingFareId.set(fare.id);
+        this.fareFromStationId = fare.fromStationId;
+        this.fareToStationId = fare.toStationId;
+        this.fareCoachType = fare.coachType;
+        this.fareAmount = fare.amount;
+        this.fareFormError.set('');
+        this.showFareForm.set(true);
+    }
+
+    cancelFareForm(): void {
+    if (this.isSavingFare()) {
+        return;
+    }
+
+    this.showFareForm.set(false);
+    this.editingFareId.set(null);
+    this.fareFormError.set('');
+    }
+
+    saveFare(): void {
+    const train = this.selectedFareTrain();
+
+    if (!train) {
+        return;
+    }
+
+    if (
+        this.fareFromStationId === null ||
+        this.fareToStationId === null ||
+        this.fareCoachType === null ||
+        this.fareAmount === null ||
+        !Number.isFinite(this.fareAmount) ||
+        this.fareAmount <= 0
+    ) {
+        this.fareFormError.set(
+        'Select both stations and a coach type, and enter a positive fare amount.'
+        );
+        return;
+    }
+
+    if (this.fareFromStationId === this.fareToStationId) {
+        this.fareFormError.set(
+        'The source and destination stations must be different.'
+        );
+        return;
+    }
+
+    const request: FareAdminRequest = {
+        trainId: train.id,
+        fromStationId: this.fareFromStationId,
+        toStationId: this.fareToStationId,
+        coachType: this.fareCoachType,
+        amount: this.fareAmount
+    };
+
+    this.isSavingFare.set(true);
+    this.fareFormError.set('');
+
+    const fareId = this.editingFareId();
+    const operation = fareId === null
+        ? this.adminService.createFare(request)
+        : this.adminService.updateFare(fareId, request);
+
+    operation.subscribe({
+        next: () => {
+        this.isSavingFare.set(false);
+        this.showFareForm.set(false);
+        this.editingFareId.set(null);
+        this.loadFares(train.id);
+        },
+        error: error => {
+        console.error('SAVE FARE ERROR:', error);
+        this.isSavingFare.set(false);
+        this.fareFormError.set(
+            error?.error?.message || 'Failed to save the fare.'
+        );
+        }
+    });
+    }
+
+    deleteFare(fare: Fare): void {
+    const confirmed = window.confirm(
+        `Delete this fare of ₹${fare.amount}?`
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    this.deletingFareId.set(fare.id);
+    this.deleteFareError.set('');
+
+    this.adminService.deleteFare(fare.id).subscribe({
+        next: () => {
+        this.fares.update(fares =>
+            fares.filter(existing => existing.id !== fare.id)
+        );
+        this.deletingFareId.set(null);
+        },
+        error: error => {
+        console.error('DELETE FARE ERROR:', error);
+        this.deletingFareId.set(null);
+        this.deleteFareError.set(
+            error?.error?.message || 'Failed to delete the fare.'
+        );
+        }
+    });
+    }
+
+    getStationLabel(stationId: number): string {
+    const station = this.stations().find(item => item.id === stationId);
+    return station
+        ? `${station.code} — ${station.name}`
+        : `Station #${stationId}`;
+    }
+
+    getFareCoachTypeName(coachType: number): string {
+    const coachTypes = [
+        'General',
+        'Sleeper',
+        'AC 3 Tier',
+        'AC 2 Tier',
+        'AC 1 Tier'
+    ];
+
+    return coachTypes[coachType] ?? 'Unknown';
     }
 }

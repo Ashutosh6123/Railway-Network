@@ -16,6 +16,7 @@ import {
 
 import { Station, StationService } from '../../core/services/station.service';
 import { TrainService } from '../../core/services/train.service';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-home',
@@ -31,6 +32,7 @@ export class Home {
 
   private readonly fromSearchSubject = new Subject<string>();
   private readonly toSearchSubject = new Subject<string>();
+  private readonly authService = inject(AuthService);
 
   fromSearchText = '';
   toSearchText = '';
@@ -83,6 +85,14 @@ export class Home {
       .subscribe(stations => {
         this.toSuggestions = stations;
       });
+  }
+
+  get isAdmin(): boolean {
+    return this.authService.getRole() === 'Administrator';
+  }
+
+  goToAdmin(): void {
+    this.router.navigate(['/admin']);
   }
 
   onFromInput(event: Event): void {

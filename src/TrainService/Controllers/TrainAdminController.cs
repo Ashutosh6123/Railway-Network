@@ -139,6 +139,10 @@ public class TrainAdminController(ITrainAdminService trainAdminService) : Contro
         return StatusCode(StatusCodes.Status201Created);
     }
 
+    [HttpGet("trains/{trainId:int}/fares")]
+    public async Task<ActionResult<List<FareAdminDto>>> GetFares(int trainId) =>
+        Ok(await trainAdminService.GetFaresAsync(trainId));
+
     [HttpPut("fares/{fareId:int}")]
     public async Task<IActionResult> UpdateFare(int fareId, FareAdminRequest request)
     {

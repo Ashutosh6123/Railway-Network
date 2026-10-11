@@ -233,6 +233,23 @@ public class TrainAdminService(
         await fares.AddAsync(new Fare { TrainId = request.TrainId, FromStationId = request.FromStationId, ToStationId = request.ToStationId, CoachType = request.CoachType, Amount = request.Amount });
     }
 
+    public async Task<List<FareAdminDto>> GetFaresAsync(int trainId)
+    {
+        await TrainOrThrow(trainId);
+
+        var trainFares = await fares.GetByTrainIdAsync(trainId);
+
+        return trainFares
+            .Select(fare => new FareAdminDto(
+                fare.Id,
+                fare.TrainId,
+                fare.FromStationId,
+                fare.ToStationId,
+                fare.CoachType,
+                fare.Amount))
+            .ToList();
+    }
+
     public async Task UpdateFareAsync(int fareId, FareAdminRequest request)
     {
         Positive(fareId, nameof(fareId));

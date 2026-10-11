@@ -109,3 +109,11 @@ public record SeatResponse(
     int Id,
     int CoachId,
     string SeatNumber);
+
+public record FareAdminResponse(
+    int Id,
+    int TrainId,
+    int FromStationId,
+    int ToStationId,
+    CoachType CoachType,
+    decimal Amount);

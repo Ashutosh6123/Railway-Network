@@ -267,6 +267,12 @@ admin.MapPut("/seats/{seatId:int}", (HttpContext context, int seatId, SeatAdminR
 
 admin.MapDelete("/seats/{seatId:int}", (HttpContext context, int seatId, GatewayProxy proxy) => proxy.ForwardAsync(context, "TrainService")).Produces(StatusCodes.Status204NoContent);
 
+admin.MapGet(
+    "/trains/{trainId:int}/fares",
+    (HttpContext context, int trainId, GatewayProxy proxy) =>
+        proxy.ForwardAsync(context, "TrainService")
+).Produces<List<FareAdminResponse>>();
+
 admin.MapPost("/fares", (HttpContext context, FareAdminRequest request, GatewayProxy proxy) => proxy.ForwardJsonAsync(context, "TrainService", request)).Produces(StatusCodes.Status201Created);
 
 admin.MapPut("/fares/{fareId:int}", (HttpContext context, int fareId, FareAdminRequest request, GatewayProxy proxy) => proxy.ForwardJsonAsync(context, "TrainService", request));
